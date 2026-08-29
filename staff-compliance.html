@@ -32,9 +32,11 @@ table.lrd .prog{font-weight:bold;color:var(--ok)}
 .tableScroll{overflow:auto;max-height:600px;border:1px solid var(--line);border-radius:8px}
 table.consumers{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;white-space:nowrap}
 table.consumers th,table.consumers td{border-bottom:1px solid var(--line);border-right:1px solid #eef1f5;padding:7px 9px;text-align:left}
-table.consumers thead th{background:#eef3f8;position:sticky;top:0;z-index:2}
-table.consumers thead tr.filters th{background:#fff;position:sticky;top:34px;z-index:2;padding:3px 5px}
-table.consumers thead tr.filters input{width:100%;font-size:11px;padding:5px;box-sizing:border-box}
+table.consumers thead th{background:#eef3f8;position:sticky;top:0;z-index:2;vertical-align:top}
+table.consumers thead th .colLabel{cursor:pointer;display:block;margin-bottom:4px;user-select:none}
+table.consumers thead th .colLabel:hover{color:var(--p)}
+table.consumers thead th .sortArrow{font-size:10px;opacity:.6;margin-left:3px}
+table.consumers thead th input{width:100%;font-size:11px;padding:5px;box-sizing:border-box;font-weight:normal}
 .consumerLink{color:var(--p);font-weight:bold;text-decoration:underline;cursor:pointer}
 
 /* ---- Modal ---- */
@@ -84,7 +86,7 @@ table.loads input{width:100%;padding:6px;font-size:12px;box-sizing:border-box}
   </div>
   <div class="tableScroll">
     <table class="consumers">
-      <thead><tr id="colHead"></tr><tr class="filters" id="colFilters"></tr></thead>
+      <thead><tr id="colHead"></tr></thead>
       <tbody id="consumerBody"></tbody>
     </table>
   </div>
@@ -117,55 +119,112 @@ table.loads input{width:100%;padding:6px;font-size:12px;box-sizing:border-box}
     <input id="amount" type="number" style="width:100%" placeholder="0">
   </div>
 
+  <label>Compliance Remark</label>
+  <textarea id="remarks" rows="2" style="width:100%"></textarea>
+
   <div id="spotForm" class="subcard hidden">
-    <b>B80 Spot Verification</b>
-    <label>Meter Serial</label>
-    <input id="meter" style="width:100%">
-    <label>Meter Status</label>
-    <select id="meterStatus" style="width:100%" onchange="toggleReading()">
-      <option value="ok">Reading Available</option>
-      <option value="burnt">Meter Burnt/Faulty</option>
-      <option value="missing">Meter Not Found</option>
-    </select>
-    <div id="readingDiv">
-      <label>Current Reading</label>
-      <input id="reading" type="number" style="width:100%">
+    <h3 style="margin-top:0">Spot Verification Report</h3>
+    <div class="profile" id="spotProfile"></div>
+
+    <label>Consumer Number</label>
+    <input id="spotConsumerNo" style="width:100%" readonly>
+
+    <div class="grid2">
+      <div><label>Meter No.</label><input id="smeter" style="width:100%"></div>
+      <div><label>Make</label><input id="smake" style="width:100%"></div>
     </div>
-    <label>Consumption Assessment</label>
-    <select id="assessment" style="width:100%"><option>No</option><option>Yes</option></select>
-    <label>Suspected Theft/Tampering</label>
-    <select id="theft" style="width:100%"><option>No</option><option>Yes</option></select>
+    <div class="grid2">
+      <div><label>1 Ph / 3 Ph</label>
+        <select id="sphase" style="width:100%"><option>1 Ph</option><option>3 Ph</option></select>
+      </div>
+      <div><label>Meter Status</label>
+        <select id="mstatus" style="width:100%"><option>1. Normal</option><option>2. Faulty</option><option>3. Burnt</option></select>
+      </div>
+    </div>
+    <label>Reading (KWH)</label>
+    <input id="reading" type="number" style="width:100%">
+
+    <div class="grid2">
+      <div><label>Consumption Assessment Required</label>
+        <select id="assessment" style="width:100%"><option>No</option><option>Yes</option></select>
+      </div>
+      <div><label>Theft Suspected</label>
+        <select id="theft" style="width:100%"><option>No</option><option>Yes</option></select>
+      </div>
+    </div>
+
+    <h4 style="margin-bottom:4px">Appliances</h4>
+    <table class="loads" id="loads">
+      <thead><tr><th>Sr.No</th><th>Appliance Name</th><th>Qty</th><th>Wattage</th><th>Hours</th><th>Consumption</th><th></th></tr></thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr class="totalsRow"><td colspan="5">Total per day consumption</td><td id="dailyTotal">0.000 kWh</td><td></td></tr>
+        <tr class="totalsRow"><td colspan="5">Consumption per month</td><td id="monthlyTotal">0.00 kWh</td><td></td></tr>
+      </tfoot>
+    </table>
+    <button type="button" class="secondary" style="margin-top:8px" onclick="addLoad()">+ Add Appliance</button>
+
     <label>Remark</label>
-    <textarea id="spotRemark" style="width:100%;margin-top:4px" rows="2"></textarea>
+    <textarea id="spotRemark" rows="2" style="width:100%"></textarea>
+
+    <h4 style="margin-bottom:4px">Site Photos (GPS + Timestamp captured automatically)</h4>
+    <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoFile(event)">
+    <button type="button" class="secondary" onclick="startPhotoCapture()">📸 Capture Photo</button>
+    <p id="photoStatus" style="font-size:12px;color:#556;margin:6px 0 0"></p>
+    <div id="photoList" class="photoGrid"></div>
+
+    <div class="profile" style="margin-top:10px">
+      <b>Staff Details and Sign</b><br>
+      <span id="spotSignBlock"></span>
+    </div>
   </div>
 
-  <label style="margin-top:12px">Revisit Required</label>
-  <select id="revisit" style="width:100%"><option>No</option><option>Yes</option></select>
-
-  <div id="revisitDateDiv" class="hidden">
-    <label>Revisit Date</label>
-    <input id="revisitDate" type="date" style="width:100%">
+  <div style="display:flex;gap:10px;margin-top:16px">
+    <button class="primary" style="flex:1" onclick="submitCase()">Save Compliance</button>
+    <button class="secondary" style="flex:1" onclick="closeModal()">Cancel</button>
   </div>
-
-  <label>Remarks</label>
-  <textarea id="remarks" style="width:100%;margin-top:4px" rows="2" placeholder="Additional notes..."></textarea>
-
-  <button class="primary" onclick="submitCompliance()" style="width:100%;margin-top:12px">Save Compliance</button>
-  <button class="secondary" onclick="closeModal()" style="width:100%;margin-top:6px">Cancel</button>
 </div>
 </div>
 
 <script>
+// ======== SET THIS to your Apps Script Web App URL (see SETUP_INSTRUCTIONS.md) ========
 const API_URL = "https://script.google.com/macros/s/AKfycbzSAZoV55yZUdUuT6UBIK1HKjW_p3DdF5hSe5z5jl0bAIvmGrSFG1ApasVVC9UpDFSCXQ/exec";
+const OFFICE_LABEL = "Assistant Engineer, MSEDCL, Chakan U Section";
+// ==========================================================================================
+
 const params = new URLSearchParams(location.search);
-const myStaffName = (params.get('staff') || '').trim().toLowerCase();
+const myStaffName = (params.get('staff')||'').trim();
 
 let allCases = [];
-let myProfile = JSON.parse(localStorage.getItem('staffProfile') || '{}');
 let selected = null;
+let profile = null;
+let pendingPhotos = []; // {dataUrl?, url?, viewUrl?, lat, lng, accuracy, timestamp}
+let capturingLoc = null;
 
 function $(id){ return document.getElementById(id); }
-function norm(s){ return String(s ?? '').toLowerCase(); }
+function norm(s){ return String(s??'').toLowerCase(); }
+function esc(v){ return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function money(v){ return '₹'+(+v||0).toLocaleString('en-IN'); }
+
+// ---------- one-time profile capture ----------
+function loadProfile(){
+  try{ profile = JSON.parse(localStorage.getItem('ddl_staff_profile')||'null'); }catch(e){ profile = null; }
+  if(profile && profile.cpf && profile.designation){
+    $('mainUi').classList.remove('hidden');
+  } else {
+    $('pName').value = myStaffName || '';
+    $('profileCard').classList.remove('hidden');
+  }
+}
+function saveProfile(){
+  const name = $('pName').value.trim(), cpf = $('pCpf').value.trim(), designation = $('pDesignation').value.trim();
+  if(!name || !cpf) return alert('Please fill in your name and CPF number.');
+  profile = { name, cpf, designation: designation||'Assistant Engineer' };
+  localStorage.setItem('ddl_staff_profile', JSON.stringify(profile));
+  $('profileCard').classList.add('hidden');
+  $('mainUi').classList.remove('hidden');
+}
+loadProfile();
 
 async function loadCases(){
   try{
@@ -173,135 +232,324 @@ async function loadCases(){
     const d = await r.json();
     allCases = d.rows || [];
     $('offlineNote').classList.add('hidden');
+    renderAll();
   }catch(err){
     $('offlineNote').classList.remove('hidden');
   }
 }
+loadCases();
+setInterval(loadCases, 20000);
 
 function myCases(){
-  if(!myStaffName) return allCases;
-  return allCases.filter(c => norm(c.staff).includes(myStaffName));
+  const staffTag = norm(myStaffName || (profile && profile.name) || '');
+  if(!staffTag) return allCases;
+  return allCases.filter(c => norm(c.staff).includes(staffTag));
 }
 
-function saveProfile(){
-  const prof = {
-    name: $('pName').value,
-    cpf: $('pCpf').value,
-    designation: $('pDesignation').value
-  };
-  localStorage.setItem('staffProfile', JSON.stringify(prof));
-  myProfile = prof;
-  $('profileCard').classList.add('hidden');
-  $('mainUi').classList.remove('hidden');
-  $('myName').textContent = prof.name || 'Staff';
+// ---------- shared Live Recovery summary logic ----------
+function summarize(list){
+  const s = { assigned:list.length, assignedAmt:0, td:0, tdAmt:0, pd:0, pdAmt:0, paid:0, paidAmt:0, b80:0, b80Amt:0, balance:0, balanceAmt:0, attended:0 };
+  list.forEach(x=>{
+    const due = +x.due||0;
+    s.assignedAmt += due;
+    if(x.status==='Attended'){
+      s.attended++;
+      if(x.compliance==='TD'){ s.td++; s.tdAmt+=due; }
+      else if(x.compliance==='PD'){ s.pd++; s.pdAmt+=due; }
+      else if(x.compliance==='Paid'){ s.paid++; s.paidAmt+=(+x.amount||0); }
+      else if(x.compliance==='B80'){ s.b80++; s.b80Amt+=due; }
+    } else {
+      s.balance++; s.balanceAmt+=due;
+    }
+  });
+  s.attendedAmt = s.paidAmt + s.tdAmt + s.pdAmt + s.b80Amt;
+  s.progress = s.assigned ? (100*s.attended/s.assigned) : 0;
+  return s;
+}
+function lrdRow(label, s){
+  return `<tr><td>${esc(label)}</td>
+    <td>${s.assigned}</td><td>${money(s.assignedAmt)}</td>
+    <td>${s.td}</td><td>${money(s.tdAmt)}</td>
+    <td>${s.pd}</td><td>${money(s.pdAmt)}</td>
+    <td>${s.paid}</td><td>${money(s.paidAmt)}</td>
+    <td>${s.b80}</td><td>${money(s.b80Amt)}</td>
+    <td>${s.balance}</td><td>${money(s.balanceAmt)}</td>
+    <td>${s.attended}</td><td>${money(s.attendedAmt)}</td>
+    <td class="prog">${s.progress.toFixed(0)}%</td></tr>`;
+}
+const LRD_HEAD = `<thead>
+  <tr><th rowspan="2">Staff Name</th><th colspan="2">Total Consumers Assigned</th><th colspan="2">TD</th><th colspan="2">PD</th>
+  <th colspan="2">Paid</th><th colspan="2">B80</th><th colspan="2">Balance</th><th colspan="2">Total Attended</th><th rowspan="2">Progress</th></tr>
+  <tr><th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th>
+  <th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th></tr>
+</thead>`;
+
+function renderMyDashboard(){
+  const mine = myCases();
+  $('myName').textContent = myStaffName || (profile&&profile.name) || '';
+  $('myLrd').innerHTML = LRD_HEAD + '<tbody>' + lrdRow(myStaffName||(profile&&profile.name)||'Me', summarize(mine)) + '</tbody>';
+}
+
+// ---------- consumer table ----------
+const COLS = [
+  ['Sr.No','_sr'],['PC','pc'],['Consumer No','no'],['Staff Name','staff'],['Consumer Name','name'],['Address','address'],
+  ['Meter Number','meter'],['Sub Category','sub'],['Bill Due Date','billDueDate'],['Last Receipt Date','lastReceiptDate'],
+  ['Bill Amount','billAmount'],['Arrears Amount','arrears'],['Closing Balance','closing'],['Total Due Amount','due'],
+  ['Age in Days','age'],["Consumer's Mobile Number",'mobile'],['Meter Type','meterType'],['Compliance Remark','remarks']
+];
+let sortKey = null, sortDir = 1;
+function toggleSort(key){
+  if(key==='_sr') return; // Sr.No isn't a real sortable field
+  if(sortKey===key) sortDir = -sortDir; else { sortKey = key; sortDir = 1; }
   renderTable();
 }
-
+function renderTableHeaders(){
+  $('colHead').innerHTML = COLS.map(c=>{
+    const arrow = sortKey===c[1] ? (sortDir===1?'▲':'▼') : '↕';
+    return `<th><span class="colLabel" onclick="toggleSort('${c[1]}')">${c[0]} <span class="sortArrow">${arrow}</span></span>
+    <input class="cf" data-k="${c[1]}" placeholder="Filter..." onclick="event.stopPropagation()" oninput="renderTable()"></th>`;
+  }).join('');
+}
+function searchable(x){ return [x.no,x.name,x.address,x.meter,x.mobile,x.staff,x.sub].join(' ').toLowerCase(); }
 function renderTable(){
-  const q = norm($('q').value);
-  const filtered = myCases().filter(c => {
-    const text = [c.no, c.name, c.address, c.meter, c.mobile].join(' ').toLowerCase();
-    return text.includes(q);
-  });
-  
-  const head = $('colHead');
-  if(head.innerHTML === ''){
-    head.innerHTML = '<th>Consumer No</th><th>Name</th><th>Address</th><th>Meter</th><th>Due</th><th>Status</th>';
+  if(!allCases.length){
+    $('consumerBody').innerHTML = `<tr><td colspan="${COLS.length}">Loading your assigned consumers...</td></tr>`;
+    return;
   }
-  
-  const tbody = $('consumerBody');
-  tbody.innerHTML = '';
-  filtered.forEach(c => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><span class="consumerLink" onclick="openModal('${encodeURIComponent(JSON.stringify(c))}')">` + (c.no || '—') + `</span></td><td>${c.name || '—'}</td><td>${c.address || '—'}</td><td>${c.meter || '—'}</td><td>₹${c.due || 0}</td><td>${c.status || 'Pending'}</td>`;
-    tbody.appendChild(tr);
+  const q = norm($('q').value);
+  let rows = myCases();
+  if(q) rows = rows.filter(x=>searchable(x).includes(q));
+  document.querySelectorAll('.cf').forEach(i=>{
+    if(norm(i.value)) rows = rows.filter(x => norm(x[i.dataset.k]).includes(norm(i.value)));
   });
+  if(sortKey){
+    rows = rows.slice().sort((a,b)=>{
+      const av = a[sortKey], bv = b[sortKey];
+      const an = parseFloat(String(av).replace(/[^0-9.-]/g,'')), bn = parseFloat(String(bv).replace(/[^0-9.-]/g,''));
+      let cmp;
+      if(!isNaN(an) && !isNaN(bn) && String(av).trim()!=='' && String(bv).trim()!=='') cmp = an-bn;
+      else cmp = String(av??'').localeCompare(String(bv??''));
+      return cmp*sortDir;
+    });
+  }
+  $('consumerBody').innerHTML = rows.length ? rows.map((x,i)=>`<tr>
+    <td>${i+1}</td><td>${esc(x.pc)}</td>
+    <td><span class="consumerLink" onclick="openModal('${x.no}')">${esc(x.no)}</span></td>
+    <td>${esc(x.staff)}</td><td>${esc(x.name)}</td><td>${esc(x.address)}</td>
+    <td>${esc(x.meter)}</td><td>${esc(x.sub)}</td><td>${esc(x.billDueDate)}</td><td>${esc(x.lastReceiptDate)}</td>
+    <td>${money(x.billAmount)}</td><td>${money(x.arrears)}</td><td>${money(x.closing)}</td><td>${money(x.due)}</td>
+    <td>${esc(x.age)}</td><td>${esc(x.mobile)}</td><td>${esc(x.meterType)}</td><td>${esc(x.remarks)}</td>
+  </tr>`).join('') : `<tr><td colspan="${COLS.length}">No consumers match your search/filters.</td></tr>`;
 }
+function renderAll(){ renderMyDashboard(); renderTableHeaders(); renderTable(); }
+renderTableHeaders();
+renderTable();
 
-function openModal(encoded){
-  selected = JSON.parse(decodeURIComponent(encoded));
-  $('mName').textContent = selected.name || 'Unknown';
-  $('mNo').textContent = selected.no || '—';
-  $('mMeter').textContent = selected.meter || '—';
-  $('mAddr').textContent = selected.address || '—';
-  $('mDue').textContent = selected.due || 0;
-  $('modalTimestamp').textContent = new Date().toLocaleString();
-  $('compliance').value = 'Paid';
-  $('amount').value = '';
-  $('spotForm').classList.add('hidden');
+// ---------- modal ----------
+function openModal(no){
+  selected = allCases.find(x=>String(x.no)===String(no));
+  if(!selected) return;
   $('overlay').classList.remove('hidden');
-}
+  $('mName').textContent = selected.name || 'Consumer';
+  $('mNo').textContent = selected.no;
+  $('mMeter').textContent = selected.meter || '—';
+  $('mAddr').textContent = selected.address || '';
+  $('mDue').textContent = (+selected.due||0).toLocaleString();
+  $('modalTimestamp').textContent = selected.time ? ('Last updated: '+selected.time) : 'Not yet submitted';
 
-function closeModal(){
-  $('overlay').classList.add('hidden');
-  selected = null;
+  $('compliance').value = selected.compliance || 'Paid';
+  $('amount').value = selected.amount || '';
+  $('remarks').value = selected.remarks || '';
+
+  let spot = {};
+  try{ spot = selected.spot ? JSON.parse(selected.spot) : {}; }catch(e){}
+  $('spotConsumerNo').value = selected.no;
+  $('smeter').value = spot.meter || selected.meter || '';
+  $('smake').value = spot.make || '';
+  $('sphase').value = spot.phase || '1 Ph';
+  $('mstatus').value = spot.status || '1. Normal';
+  $('reading').value = spot.reading || '';
+  $('assessment').value = spot.assessment || 'No';
+  $('theft').value = spot.theft || 'No';
+  $('spotRemark').value = spot.remark || '';
+  $('loads').querySelector('tbody').innerHTML = '';
+  (spot.appliances||[]).forEach(addLoad);
+  if(!(spot.appliances||[]).length) addLoad();
+  calcLoad();
+
+  pendingPhotos = (spot.photos||[]).map(p=>({...p}));
+  renderPhotos();
+
+  updateSpotProfile();
+  toggleSpot();
+  window.scrollTo({top:0});
+}
+function closeModal(){ $('overlay').classList.add('hidden'); selected = null; }
+
+function updateSpotProfile(){
+  $('spotProfile').innerHTML = `Staff Name: <b>${esc(profile?.name||'')}</b> &nbsp;|&nbsp; CPF: <b>${esc(profile?.cpf||'')}</b> &nbsp;|&nbsp; Designation: <b>${esc(profile?.designation||'Assistant Engineer')}</b>`;
+  $('spotSignBlock').innerHTML = `${esc(OFFICE_LABEL)}<br>Staff: ${esc(profile?.name||'')} (CPF ${esc(profile?.cpf||'')})`;
 }
 
 function toggleSpot(){
-  const comp = $('compliance').value;
-  if(comp === 'B80'){
-    $('amountRow').classList.add('hidden');
-    $('spotForm').classList.remove('hidden');
-  }else{
-    $('amountRow').classList.remove('hidden');
-    $('spotForm').classList.add('hidden');
-  }
-  $('revisitDateDiv').classList.add('hidden');
+  const isB80 = $('compliance').value === 'B80';
+  $('spotForm').classList.toggle('hidden', !isB80);
+  $('amountRow').classList.toggle('hidden', isB80);
 }
 
-function toggleReading(){
-  const status = $('meterStatus').value;
-  const rdiv = $('readingDiv');
-  if(status === 'ok'){
-    rdiv.classList.remove('hidden');
-  }else{
-    rdiv.classList.add('hidden');
-  }
+function addLoad(v={}){
+  const tbody = $('loads').querySelector('tbody');
+  const sr = tbody.children.length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${sr}</td><td><input value="${esc(v.name||'')}"></td>
+    <td><input type="number" value="${v.qty||''}" oninput="calcLoad()"></td>
+    <td><input type="number" value="${v.watt||''}" oninput="calcLoad()"></td>
+    <td><input type="number" step=".1" value="${v.hours||''}" oninput="calcLoad()"></td>
+    <td><input class="kwh" readonly></td>
+    <td><button type="button" class="rmv" onclick="this.closest('tr').remove();renumber();calcLoad()">×</button></td>`;
+  tbody.appendChild(tr);
+  calcLoad();
+}
+function renumber(){
+  [...$('loads').querySelector('tbody').rows].forEach((r,i)=>r.cells[0].textContent = i+1);
+}
+function calcLoad(){
+  let t = 0;
+  [...$('loads').querySelector('tbody').rows].forEach(r=>{
+    const i = r.querySelectorAll('input');
+    const k = (+i[1].value||0)*(+i[2].value||0)*(+i[3].value||0)/1000; // Qty x Wattage x Hours / 1000 = kWh/day
+    r.querySelector('.kwh').value = k.toFixed(3);
+    t += k;
+  });
+  $('dailyTotal').textContent = t.toFixed(3)+' kWh';
+  $('monthlyTotal').textContent = (t*30).toFixed(2)+' kWh';
 }
 
-function submitCompliance(){
-  if(!selected) return;
-  const data = {
-    no: selected.no,
-    name: selected.name,
-    staff: myProfile.name || 'Unknown',
-    compliance: $('compliance').value,
-    amount: $('amount').value || 0,
-    meter: $('meter').value || '',
-    meterStatus: $('meterStatus').value || '',
-    reading: $('reading').value || '',
-    assessment: $('assessment').value,
-    theft: $('theft').value,
-    spotRemark: $('spotRemark').value,
-    revisit: $('revisit').value,
-    revisitDate: $('revisitDate').value,
-    remarks: $('remarks').value,
-    timestamp: new Date().toISOString()
-  };
-  
-  console.log('Submitting:', data);
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  }).then(r => r.json()).then(d => {
-    alert('✓ Compliance saved');
-    closeModal();
-    loadCases();
-    renderTable();
-  }).catch(e => {
-    alert('✗ Error: ' + e.message);
+// ---------- photo + GPS capture ----------
+function getLocation(){
+  return new Promise(resolve=>{
+    if(!navigator.geolocation){ resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy) }),
+      () => resolve(null),
+      { enableHighAccuracy:true, timeout:10000 }
+    );
   });
 }
-
-if(myProfile.name){
-  $('myName').textContent = myProfile.name;
-  $('mainUi').classList.remove('hidden');
-  loadCases();
-  renderTable();
-}else{
-  $('profileCard').classList.remove('hidden');
+function compressImage(file, maxWidth, quality){
+  maxWidth = maxWidth||1000; quality = quality||0.6;
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > maxWidth){ h = Math.round(h*maxWidth/w); w = maxWidth; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function startPhotoCapture(){
+  $('photoStatus').textContent = 'Getting GPS location...';
+  capturingLoc = await getLocation();
+  $('photoStatus').textContent = capturingLoc
+    ? `Location captured (±${capturingLoc.accuracy}m). Opening camera...`
+    : 'Location unavailable (permission denied or no signal) — continuing without GPS.';
+  $('photoInput').click();
+}
+async function handlePhotoFile(e){
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  $('photoStatus').textContent = 'Processing photo...';
+  const dataUrl = await compressImage(file);
+  pendingPhotos.push({
+    dataUrl,
+    lat: capturingLoc?.lat, lng: capturingLoc?.lng, accuracy: capturingLoc?.accuracy,
+    timestamp: new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'medium'})
+  });
+  capturingLoc = null;
+  $('photoStatus').textContent = '';
+  renderPhotos();
+}
+function renderPhotos(){
+  $('photoList').innerHTML = pendingPhotos.map((p,i)=>`
+    <div class="photoThumb">
+      <img src="${p.url||p.dataUrl}">
+      <div class="meta">${p.lat?p.lat.toFixed(5)+', '+p.lng.toFixed(5)+' (±'+p.accuracy+'m)':'No GPS'}<br>${p.timestamp||''}</div>
+      <button type="button" class="rmv" onclick="removePhoto(${i})">×</button>
+    </div>`).join('');
+}
+function removePhoto(i){ pendingPhotos.splice(i,1); renderPhotos(); }
+async function uploadPendingPhotos(){
+  for(const p of pendingPhotos){
+    if(!p.url && p.dataUrl){
+      try{
+        const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body: JSON.stringify({ action:'uploadPhoto', dataUrl: p.dataUrl, filename: `consumer_${selected.no}_${Date.now()}.jpg` }) });
+        const d = await res.json();
+        if(d.ok){ p.url = d.url; p.viewUrl = d.viewUrl; delete p.dataUrl; }
+      }catch(err){ /* left as dataUrl; will retry on next save attempt */ }
+    }
+  }
 }
 
-setInterval(loadCases, 20000);
+function spotData(){
+  const rows = [...$('loads').querySelector('tbody').rows].map(r=>{
+    const i = r.querySelectorAll('input');
+    return { name:i[0].value, qty:i[1].value, watt:i[2].value, hours:i[3].value, kwh:r.querySelector('.kwh').value };
+  });
+  return {
+    consumerNo: selected.no,
+    meter: $('smeter').value, make: $('smake').value, phase: $('sphase').value,
+    status: $('mstatus').value, reading: $('reading').value,
+    assessment: $('assessment').value, theft: $('theft').value,
+    appliances: rows,
+    daily: $('dailyTotal').textContent, monthly: $('monthlyTotal').textContent,
+    remark: $('spotRemark').value,
+    photos: pendingPhotos.map(p=>({ url:p.url, viewUrl:p.viewUrl, dataUrl:p.dataUrl, lat:p.lat, lng:p.lng, accuracy:p.accuracy, timestamp:p.timestamp })),
+    staffName: profile?.name||myStaffName||'', cpf: profile?.cpf||'', designation: profile?.designation||'Assistant Engineer',
+    office: OFFICE_LABEL, performedAt: new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'medium'})
+  };
+}
+
+async function submitCase(){
+  if($('compliance').value === 'B80' && !$('smeter').value.trim()){
+    return alert('Meter No. is required for B80 spot verification');
+  }
+  if($('compliance').value === 'B80' && pendingPhotos.some(p=>p.dataUrl)){
+    $('photoStatus').textContent = 'Uploading photos...';
+    await uploadPendingPhotos();
+    renderPhotos();
+    $('photoStatus').textContent = '';
+  }
+  const payload = {
+    action: 'update',
+    caseData: {
+      no: selected.no,
+      status: 'Attended',
+      compliance: $('compliance').value,
+      amount: +$('amount').value || 0,
+      remarks: $('remarks').value,
+      time: new Date().toLocaleString(),
+      spot: $('compliance').value === 'B80' ? spotData() : null
+    }
+  };
+  try{
+    await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
+    await loadCases();
+    closeModal();
+  }catch(err){
+    alert('Could not save — check your internet connection and try again.');
+  }
+}
 </script>
 </body></html>
