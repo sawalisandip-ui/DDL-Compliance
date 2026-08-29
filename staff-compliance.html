@@ -1,0 +1,242 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Field Compliance</title>
+<style>
+:root{--p:#124b7d;--ok:#1a7f4b;--warn:#b8860b;--bg:#f3f6fa;--line:#d8e1eb}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#172033;font-size:16px}
+header{background:var(--p);color:#fff;padding:16px;font-size:19px;font-weight:bold;position:sticky;top:0;z-index:5}
+.wrap{max-width:600px;margin:auto;padding:14px}
+.card{background:#fff;padding:16px;border-radius:12px;margin-bottom:14px;box-shadow:0 1px 8px #00000014}
+input,select,textarea{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;margin-top:4px}
+label{font-size:13px;font-weight:bold;display:block;margin:12px 0 2px;color:#334}
+.searchbox{font-size:17px;padding:15px!important;border:2px solid var(--p)}
+.results{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:8px}
+.result{padding:13px;border-bottom:1px solid var(--line)}
+.result:active{background:#eef5fc}
+.result b{color:var(--p);font-size:16px}
+button{border:0;border-radius:9px;padding:15px;font-size:16px;font-weight:bold;cursor:pointer;width:100%}
+.primary{background:var(--p);color:#fff;margin-top:16px}
+.secondary{background:#eef2f7;color:#334;margin-top:8px}
+.hidden{display:none}
+.consumerHeader{background:#eaf2fb;border-radius:10px;padding:14px;margin-bottom:12px}
+.consumerHeader h2{margin:0 0 6px;font-size:18px}
+.consumerHeader div{font-size:13px;color:#445;line-height:1.6}
+.warn{background:#fff3cd;padding:10px;border-radius:8px;font-size:13px;margin-top:10px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a7f4b;color:#fff;padding:14px 22px;border-radius:10px;font-weight:bold;box-shadow:0 4px 14px #0004;z-index:20}
+.subcard{border:1px solid var(--line);padding:12px;border-radius:10px;margin-top:10px;background:#fafcff}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th,td{padding:6px;border-bottom:1px solid var(--line);text-align:left}
+.offline{background:#f8d7da;color:#611;padding:10px;border-radius:8px;font-size:13px;margin-bottom:10px}
+</style></head><body>
+<header>⚡ Field Compliance</header>
+<div class="wrap">
+
+<div id="offlineNote" class="offline hidden">No connection to server — check your internet and reload.</div>
+
+<div id="searchCard" class="card">
+  <label>Search your consumer (number, name, address, meter, mobile)</label>
+  <input id="q" class="searchbox" placeholder="Type to search..." oninput="doSearch()">
+  <div id="results" class="results hidden"></div>
+</div>
+
+<div id="formCard" class="card hidden">
+  <div class="consumerHeader">
+    <h2 id="cName"></h2>
+    <div>
+      Consumer No: <b id="cNo"></b><br>
+      Address: <span id="cAddr"></span><br>
+      Total Due: ₹<b id="cDue"></b> &nbsp; Status: <b id="cStatus"></b>
+    </div>
+  </div>
+
+  <label>Payment Status</label>
+  <select id="payment"><option>Not Paid</option><option>Fully Paid</option><option>Part Paid</option></select>
+
+  <label>Amount Collected (₹)</label>
+  <input id="amount" type="number" placeholder="0">
+
+  <label>Supply Status</label>
+  <select id="supply"><option>Disconnection Pending</option><option>Disconnected Today</option><option>Already Disconnected</option><option>Not Found / Locked</option></select>
+
+  <label>Billing Status</label>
+  <select id="billing" onchange="toggleSpot()"><option>No Billing Issue</option><option>Billing Correction Required</option></select>
+
+  <div id="spotForm" class="subcard hidden">
+    <b>Billing Spot Verification</b>
+    <label>Meter Serial Number</label>
+    <input id="meter">
+    <label>Meter Status</label>
+    <select id="meterStatus" onchange="readingToggle()"><option>Reading Available</option><option>Meter Burnt/Faulty</option><option>Meter Not Found</option></select>
+    <div id="readingDiv">
+      <label>Current Reading</label>
+      <input id="reading" type="number">
+    </div>
+    <label>Consumption Assessment Required?</label>
+    <select id="assessment"><option>No</option><option>Yes</option></select>
+    <label>Suspected Theft/Tampering?</label>
+    <select id="theft"><option>No</option><option>Yes</option></select>
+    <label>Spot Remark</label>
+    <textarea id="spotRemark" rows="2"></textarea>
+    <div class="warn">Load assessment table skipped on mobile for speed — office will complete detailed load calc from your remarks if "Assessment Required" is Yes.</div>
+  </div>
+
+  <label>Alternate Contact Reached?</label>
+  <select id="alternate"><option>No</option><option>Yes</option></select>
+
+  <label>Consumer Response</label>
+  <select id="response"><option>Will Pay</option><option>Refused</option><option>Disputes Bill</option><option>Requesting Time</option><option>No Response</option></select>
+
+  <label>Action</label>
+  <select id="action"><option>Close Case</option><option>Revisit Required</option><option>Escalate</option><option>Legal Action</option></select>
+
+  <label>Revisit Date (if applicable)</label>
+  <input id="revisit" type="date">
+
+  <label>Remarks</label>
+  <textarea id="remarks" rows="3" placeholder="Any additional notes..."></textarea>
+
+  <button class="primary" onclick="submitCase()">Save Compliance</button>
+  <button class="secondary" onclick="backToSearch()">Back to Search</button>
+</div>
+
+</div>
+
+<script>
+// ======== SET THIS TO YOUR APPS SCRIPT WEB APP URL (see SETUP_INSTRUCTIONS.md) ========
+const API_URL = "https://script.google.com/macros/s/AKfycbzSAZoV55yZUdUuT6UBIK1HKjW_p3DdF5hSe5z5jl0bAIvmGrSFG1ApasVVC9UpDFSCXQ/exec";
+// ========================================================================================
+
+const params = new URLSearchParams(location.search);
+const myStaffName = (params.get('staff')||'').trim().toLowerCase();
+
+let allCases = [];
+let selected = null;
+
+function $(id){ return document.getElementById(id); }
+function norm(s){ return String(s??'').toLowerCase(); }
+
+async function loadCases(){
+  try{
+    const r = await fetch(API_URL);
+    const d = await r.json();
+    allCases = d.rows || [];
+    $('offlineNote').classList.add('hidden');
+  }catch(err){
+    $('offlineNote').classList.remove('hidden');
+  }
+}
+loadCases();
+setInterval(loadCases, 20000); // refresh list every 20s in case new list imported
+
+function myCases(){
+  if(!myStaffName) return allCases;
+  return allCases.filter(c => norm(c.staff).includes(myStaffName));
+}
+
+function searchable(x){
+  return [x.no,x.name,x.address,x.meter,x.mobile,x.staff].join(' ').toLowerCase();
+}
+
+function doSearch(){
+  const q = norm($('q').value);
+  const box = $('results');
+  if(!q){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  const r = myCases().filter(x => searchable(x).includes(q)).slice(0,50);
+  box.classList.remove('hidden');
+  box.innerHTML = r.length ? r.map(x =>
+    `<div class="result" onclick="selectCase('${x.no}')"><b>${x.no}</b> — ${x.name||''}<br><small>${x.address||''} | Due: ₹${(+x.due||0).toLocaleString()} | ${x.status||'Pending'}</small></div>`
+  ).join('') : '<div class="result">No match found in your assigned list</div>';
+}
+
+function selectCase(no){
+  selected = allCases.find(x => String(x.no) === String(no));
+  if(!selected) return;
+  $('searchCard').classList.add('hidden');
+  $('formCard').classList.remove('hidden');
+  $('cName').textContent = selected.name || 'Consumer';
+  $('cNo').textContent = selected.no;
+  $('cAddr').textContent = selected.address || '';
+  $('cDue').textContent = (+selected.due||0).toLocaleString();
+  $('cStatus').textContent = selected.status || 'Pending';
+
+  $('payment').value = selected.payment || 'Not Paid';
+  $('amount').value = selected.amount || '';
+  $('supply').value = selected.supply || 'Disconnection Pending';
+  $('billing').value = selected.billing || 'No Billing Issue';
+  $('alternate').value = selected.alternate || 'No';
+  $('response').value = selected.response || 'Will Pay';
+  $('action').value = selected.action || 'Close Case';
+  $('revisit').value = selected.revisit || '';
+  $('remarks').value = selected.remarks || '';
+
+  let spot = {};
+  try{ spot = selected.spot ? JSON.parse(selected.spot) : {}; }catch(e){}
+  $('meter').value = spot.meter || selected.meter || '';
+  $('meterStatus').value = spot.meterStatus || 'Reading Available';
+  $('reading').value = spot.reading || '';
+  $('assessment').value = spot.assessment || 'No';
+  $('theft').value = spot.theft || 'No';
+  $('spotRemark').value = spot.remark || '';
+
+  toggleSpot(); readingToggle();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function toggleSpot(){
+  $('spotForm').classList.toggle('hidden', $('billing').value !== 'Billing Correction Required');
+}
+function readingToggle(){
+  $('readingDiv').style.display = $('meterStatus').value === 'Reading Available' ? 'block' : 'none';
+}
+
+function backToSearch(){
+  $('formCard').classList.add('hidden');
+  $('searchCard').classList.remove('hidden');
+  $('q').value=''; $('results').innerHTML=''; $('results').classList.add('hidden');
+}
+
+async function submitCase(){
+  if($('billing').value === 'Billing Correction Required' && !$('meter').value){
+    return alert('Meter Serial Number is required for billing correction cases');
+  }
+  const payload = {
+    action: 'update',
+    caseData: {
+      no: selected.no,
+      status: 'Attended',
+      payment: $('payment').value,
+      amount: +$('amount').value || 0,
+      supply: $('supply').value,
+      billing: $('billing').value,
+      alternate: $('alternate').value,
+      response: $('response').value,
+      action: $('action').value,
+      revisit: $('revisit').value,
+      remarks: $('remarks').value,
+      time: new Date().toLocaleString(),
+      spot: $('billing').value === 'Billing Correction Required' ? {
+        meter: $('meter').value, meterStatus: $('meterStatus').value, reading: $('reading').value,
+        assessment: $('assessment').value, theft: $('theft').value, remark: $('spotRemark').value
+      } : null
+    }
+  };
+  try{
+    // text/plain avoids a CORS preflight that Apps Script can't answer
+    await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
+    showToast('Saved ✓');
+    await loadCases();
+    backToSearch();
+  }catch(err){
+    alert('Could not save — check your internet connection and try again.');
+  }
+}
+
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2000);
+}
+</script>
+</body></html>
