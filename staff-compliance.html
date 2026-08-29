@@ -25,15 +25,32 @@ button{border:0;border-radius:9px;padding:15px;font-size:16px;font-weight:bold;c
 .warn{background:#fff3cd;padding:10px;border-radius:8px;font-size:13px;margin-top:10px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a7f4b;color:#fff;padding:14px 22px;border-radius:10px;font-weight:bold;box-shadow:0 4px 14px #0004;z-index:20}
 .subcard{border:1px solid var(--line);padding:12px;border-radius:10px;margin-top:10px;background:#fafcff}
-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.profile{background:#eaf3fb;padding:12px;border-radius:8px;font-size:13px;line-height:1.7}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
 th,td{padding:6px;border-bottom:1px solid var(--line);text-align:left}
+table input{padding:6px;font-size:13px;margin-top:0}
+.rmv{background:#f4d4d1;color:#a62c27;width:auto;padding:6px 10px}
 .offline{background:#f8d7da;color:#611;padding:10px;border-radius:8px;font-size:13px;margin-bottom:10px}
+.step{font-size:11px;font-weight:bold;color:var(--p);text-transform:uppercase;letter-spacing:.03em;margin-top:14px}
 </style></head><body>
 <header>⚡ Field Compliance</header>
 <div class="wrap">
 
 <div id="offlineNote" class="offline hidden">No connection to server — check your internet and reload.</div>
 
+<div id="profileCard" class="card hidden">
+  <h3>One-time setup</h3>
+  <p style="font-size:13px;color:#556">This is recorded on every Spot Verification report you submit from this phone.</p>
+  <label>Your Name</label>
+  <input id="pName">
+  <label>CPF Number</label>
+  <input id="pCpf">
+  <label>Designation</label>
+  <input id="pDesignation" placeholder="e.g. Assistant Engineer" value="Assistant Engineer">
+  <button class="primary" onclick="saveProfile()">Save & Continue</button>
+</div>
+
+<div id="mainUi" class="hidden">
 <div id="searchCard" class="card">
   <label>Search your consumer (number, name, address, meter, mobile)</label>
   <input id="q" class="searchbox" placeholder="Type to search..." oninput="doSearch()">
@@ -44,74 +61,100 @@ th,td{padding:6px;border-bottom:1px solid var(--line);text-align:left}
   <div class="consumerHeader">
     <h2 id="cName"></h2>
     <div>
-      Consumer No: <b id="cNo"></b><br>
+      Consumer No: <b id="cNo"></b> &nbsp; Meter: <b id="cMeter"></b><br>
       Address: <span id="cAddr"></span><br>
-      Total Due: ₹<b id="cDue"></b> &nbsp; Status: <b id="cStatus"></b>
+      Sub Category: <span id="cSub"></span><br>
+      Closing Balance: ₹<b id="cDue"></b> &nbsp; Status: <b id="cStatus"></b>
     </div>
   </div>
 
-  <label>Payment Status</label>
-  <select id="payment"><option>Not Paid</option><option>Fully Paid</option><option>Part Paid</option></select>
-
-  <label>Amount Collected (₹)</label>
+  <div class="step">1. Compliance</div>
+  <select id="compliance" onchange="toggleSpot()">
+    <option value="Paid">Paid</option>
+    <option value="Part Paid">Part Paid</option>
+    <option value="TD/PD">TD/PD</option>
+    <option value="B80">B80 — Bill Revision Required</option>
+  </select>
+  <label>Amount Paid (₹)</label>
   <input id="amount" type="number" placeholder="0">
 
-  <label>Supply Status</label>
-  <select id="supply"><option>Disconnection Pending</option><option>Disconnected Today</option><option>Already Disconnected</option><option>Not Found / Locked</option></select>
+  <div class="step">2. Supply / Disconnection</div>
+  <select id="supply">
+    <option>Disconnection Pending</option>
+    <option>Temporarily Disconnected (TD)</option>
+    <option>Permanently Disconnected (PD)</option>
+    <option>Already TD/PD</option>
+    <option>Supply Found ON</option>
+  </select>
 
-  <label>Billing Status</label>
-  <select id="billing" onchange="toggleSpot()"><option>No Billing Issue</option><option>Billing Correction Required</option></select>
+  <div class="step">3. TD/PD but using another source</div>
+  <select id="alt">
+    <option>No</option>
+    <option>Yes - Another Meter</option>
+    <option>Yes - Other Source</option>
+    <option>Suspected Unauthorized Supply</option>
+  </select>
+
+  <div class="step">4. Consumer denied paying</div>
+  <select id="response">
+    <option>Will Pay</option>
+    <option>Refused to Pay</option>
+    <option>Consumer Unavailable</option>
+    <option>Premises Locked</option>
+    <option>Other</option>
+  </select>
+
+  <div class="step">5. Further Action</div>
+  <select id="action">
+    <option>Close Case</option>
+    <option>Revisit</option>
+    <option>Billing Correction</option>
+    <option>Immediate Disconnection</option>
+    <option>Enforcement Verification</option>
+    <option>Supervisor Verification</option>
+  </select>
+  <label>Revisit Date (if applicable)</label>
+  <input id="revisit" type="date">
+  <label>Remarks</label>
+  <textarea id="remarks" rows="3" placeholder="Any additional notes..."></textarea>
 
   <div id="spotForm" class="subcard hidden">
-    <b>Billing Spot Verification</b>
+    <b>Spot Verification — B80 Bill Revision</b>
+    <div class="profile" id="spotProfile"></div>
     <label>Meter Serial Number</label>
-    <input id="meter">
-    <label>Meter Status</label>
-    <select id="meterStatus" onchange="readingToggle()"><option>Reading Available</option><option>Meter Burnt/Faulty</option><option>Meter Not Found</option></select>
+    <input id="smeter">
+    <label>Reading / Faulty / No Display</label>
+    <select id="mstatus" onchange="readingToggle()">
+      <option>Reading Available</option>
+      <option>Faulty</option>
+      <option>No Display</option>
+    </select>
     <div id="readingDiv">
       <label>Current Reading</label>
       <input id="reading" type="number">
     </div>
-    <label>Consumption Assessment Required?</label>
+    <label>Assessment Required</label>
     <select id="assessment"><option>No</option><option>Yes</option></select>
-    <label>Suspected Theft/Tampering?</label>
+    <label>Suspected Theft/Tampering</label>
     <select id="theft"><option>No</option><option>Yes</option></select>
     <label>Spot Remark</label>
     <textarea id="spotRemark" rows="2"></textarea>
-    <div class="warn">Load assessment table skipped on mobile for speed — office will complete detailed load calc from your remarks if "Assessment Required" is Yes.</div>
   </div>
-
-  <label>Alternate Contact Reached?</label>
-  <select id="alternate"><option>No</option><option>Yes</option></select>
-
-  <label>Consumer Response</label>
-  <select id="response"><option>Will Pay</option><option>Refused</option><option>Disputes Bill</option><option>Requesting Time</option><option>No Response</option></select>
-
-  <label>Action</label>
-  <select id="action"><option>Close Case</option><option>Revisit Required</option><option>Escalate</option><option>Legal Action</option></select>
-
-  <label>Revisit Date (if applicable)</label>
-  <input id="revisit" type="date">
-
-  <label>Remarks</label>
-  <textarea id="remarks" rows="3" placeholder="Any additional notes..."></textarea>
 
   <button class="primary" onclick="submitCase()">Save Compliance</button>
   <button class="secondary" onclick="backToSearch()">Back to Search</button>
 </div>
-
 </div>
 
 <script>
-// ======== SET THIS TO YOUR APPS SCRIPT WEB APP URL (see SETUP_INSTRUCTIONS.md) ========
 const API_URL = "https://script.google.com/macros/s/AKfycbzSAZoV55yZUdUuT6UBIK1HKjW_p3DdF5hSe5z5jl0bAIvmGrSFG1ApasVVC9UpDFSCXQ/exec";
-// ========================================================================================
 
 const params = new URLSearchParams(location.search);
 const myStaffName = (params.get('staff')||'').trim().toLowerCase();
 
 let allCases = [];
 let selected = null;
+let profile = {};
 
 function $(id){ return document.getElementById(id); }
 function norm(s){ return String(s??'').toLowerCase(); }
@@ -127,7 +170,7 @@ async function loadCases(){
   }
 }
 loadCases();
-setInterval(loadCases, 20000); // refresh list every 20s in case new list imported
+setInterval(loadCases, 20000);
 
 function myCases(){
   if(!myStaffName) return allCases;
@@ -156,15 +199,16 @@ function selectCase(no){
   $('formCard').classList.remove('hidden');
   $('cName').textContent = selected.name || 'Consumer';
   $('cNo').textContent = selected.no;
+  $('cMeter').textContent = selected.meter || '—';
   $('cAddr').textContent = selected.address || '';
+  $('cSub').textContent = selected.sub || '';
   $('cDue').textContent = (+selected.due||0).toLocaleString();
   $('cStatus').textContent = selected.status || 'Pending';
 
-  $('payment').value = selected.payment || 'Not Paid';
+  $('compliance').value = selected.compliance || 'Paid';
   $('amount').value = selected.amount || '';
   $('supply').value = selected.supply || 'Disconnection Pending';
-  $('billing').value = selected.billing || 'No Billing Issue';
-  $('alternate').value = selected.alternate || 'No';
+  $('alt').value = selected.alt || 'No';
   $('response').value = selected.response || 'Will Pay';
   $('action').value = selected.action || 'Close Case';
   $('revisit').value = selected.revisit || '';
@@ -172,8 +216,8 @@ function selectCase(no){
 
   let spot = {};
   try{ spot = selected.spot ? JSON.parse(selected.spot) : {}; }catch(e){}
-  $('meter').value = spot.meter || selected.meter || '';
-  $('meterStatus').value = spot.meterStatus || 'Reading Available';
+  $('smeter').value = spot.meter || selected.meter || '';
+  $('mstatus').value = spot.status || 'Reading Available';
   $('reading').value = spot.reading || '';
   $('assessment').value = spot.assessment || 'No';
   $('theft').value = spot.theft || 'No';
@@ -184,10 +228,13 @@ function selectCase(no){
 }
 
 function toggleSpot(){
-  $('spotForm').classList.toggle('hidden', $('billing').value !== 'Billing Correction Required');
+  $('spotForm').classList.toggle('hidden', $('compliance').value !== 'B80');
+  if($('compliance').value === 'B80'){
+    $('spotProfile').innerHTML = `<b>Your Profile (stored on this device)</b><br>Name: ${profile.name||''}<br>CPF: ${profile.cpf||''}<br>Designation: ${profile.designation||''}${!profile.name?'<br><br><u>Please complete setup first</u>':''}`;
+  }
 }
 function readingToggle(){
-  $('readingDiv').style.display = $('meterStatus').value === 'Reading Available' ? 'block' : 'none';
+  $('readingDiv').style.display = $('mstatus').value === 'Reading Available' ? 'block' : 'none';
 }
 
 function backToSearch(){
@@ -196,33 +243,66 @@ function backToSearch(){
   $('q').value=''; $('results').innerHTML=''; $('results').classList.add('hidden');
 }
 
+function loadProfile(){
+  const stored = localStorage.getItem('ddl_profile');
+  if(stored){
+    try{ profile = JSON.parse(stored); }catch(e){}
+  }
+  if(profile.name && profile.cpf){
+    $('profileCard').classList.add('hidden');
+    $('mainUi').classList.remove('hidden');
+  }else{
+    $('profileCard').classList.remove('hidden');
+    $('mainUi').classList.add('hidden');
+  }
+}
+
+function saveProfile(){
+  profile.name = $('pName').value.trim();
+  profile.cpf = $('pCpf').value.trim();
+  profile.designation = $('pDesignation').value.trim();
+  if(!profile.name || !profile.cpf) return alert('Name and CPF are required');
+  localStorage.setItem('ddl_profile', JSON.stringify(profile));
+  loadProfile();
+}
+
 async function submitCase(){
-  if($('billing').value === 'Billing Correction Required' && !$('meter').value){
-    return alert('Meter Serial Number is required for billing correction cases');
+  if($('compliance').value === 'B80' && !$('smeter').value){
+    return alert('Meter Serial Number is required for B80 bill revision cases');
+  }
+  if($('compliance').value === 'B80' && !profile.name){
+    return alert('Please complete your profile setup first');
   }
   const payload = {
     action: 'update',
     caseData: {
       no: selected.no,
       status: 'Attended',
-      payment: $('payment').value,
+      compliance: $('compliance').value,
       amount: +$('amount').value || 0,
       supply: $('supply').value,
-      billing: $('billing').value,
-      alternate: $('alternate').value,
+      alt: $('alt').value,
       response: $('response').value,
       action: $('action').value,
       revisit: $('revisit').value,
       remarks: $('remarks').value,
       time: new Date().toLocaleString(),
-      spot: $('billing').value === 'Billing Correction Required' ? {
-        meter: $('meter').value, meterStatus: $('meterStatus').value, reading: $('reading').value,
-        assessment: $('assessment').value, theft: $('theft').value, remark: $('spotRemark').value
-      } : null
+      spot: $('compliance').value === 'B80' ? JSON.stringify({
+        meter: $('smeter').value,
+        status: $('mstatus').value,
+        reading: $('reading').value,
+        assessment: $('assessment').value,
+        theft: $('theft').value,
+        remark: $('spotRemark').value,
+        staffName: profile.name,
+        cpf: profile.cpf,
+        designation: profile.designation,
+        performedAt: new Date().toLocaleString(),
+        office: 'Assistant Engineer, MSEDCL, Chakan U Section'
+      }) : null
     }
   };
   try{
-    // text/plain avoids a CORS preflight that Apps Script can't answer
     await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
     showToast('Saved ✓');
     await loadCases();
@@ -238,5 +318,8 @@ function showToast(msg){
   document.body.appendChild(t);
   setTimeout(()=>t.remove(), 2000);
 }
+
+loadProfile();
+loadCases();
 </script>
 </body></html>
