@@ -5,26 +5,30 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <style>
-:root{--p:#124b7d;--ok:#1a7f4b;--warn:#b8860b;--bad:#b3261e;--bg:#f3f6fa;--line:#d8e1eb}
+:root{--p:#124b7d;--ok:#1a7f4b;--bg:#f3f6fa;--line:#d8e1eb;--head:#fde3d0;--total:#ffc107}
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#172033}
 header{background:var(--p);color:#fff;padding:16px 22px;font-size:20px;font-weight:bold;display:flex;justify-content:space-between;align-items:center}
 #liveDot{width:10px;height:10px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:6px;box-shadow:0 0 0 rgba(74,222,128,.6);animation:pulse 2s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(74,222,128,.5)}70%{box-shadow:0 0 0 8px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
-.wrap{max-width:1400px;margin:auto;padding:16px}
+.wrap{max-width:1500px;margin:auto;padding:16px}
 .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .nav button{border:0;border-radius:8px;padding:10px 16px;cursor:pointer;background:#fff;font-weight:bold}
 .nav .active{background:var(--p);color:#fff}
-.card{background:#fff;padding:18px;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 8px #00000012}
+.card{background:#fff;padding:0;overflow:hidden;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 8px #00000012}
+.pad{padding:18px}
 .hidden{display:none}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.metric{background:#edf3fa;padding:16px;border-radius:10px;text-align:center}
-.metric span{font-size:12px;color:#556;display:block;margin-bottom:4px}
-.metric b{display:block;font-size:26px;color:var(--p)}
-table{border-collapse:collapse;width:100%;white-space:nowrap;font-size:12px}
+.lrd-title{background:var(--head);text-align:center;font-weight:bold;padding:10px;font-size:16px}
+.lrd-wrap{overflow-x:auto}
+table.lrd{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}
+table.lrd th,table.lrd td{border:1px solid var(--line);padding:7px 9px;text-align:center}
+table.lrd thead th{background:#eef3f8}
+table.lrd .prog{font-weight:bold;color:var(--ok)}
+table.lrd tr.totalRow td{background:var(--total);font-weight:bold}
+table{width:100%;border-collapse:collapse;font-size:12px}
 th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left}
 th{background:#eef3f8;position:sticky;top:0;z-index:2}
-th input{font-size:11px;padding:5px;margin-top:5px;width:100%;box-sizing:border-box;min-width:80px}
+th input{font-size:11px;padding:5px;margin-top:5px;width:100%;box-sizing:border-box}
 .scroll{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:8px}
 button.primary{background:var(--p);color:#fff;border:0;border-radius:8px;padding:11px 16px;cursor:pointer;font-weight:bold}
 button.ghost{background:#eef2f7;color:#334;border:0;border-radius:8px;padding:11px 16px;cursor:pointer;font-weight:bold}
@@ -33,11 +37,16 @@ input.search{width:100%;padding:12px;border:2px solid var(--p);border-radius:8px
 .badge{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold}
 .b-pending{background:#fff0d8;color:#8a5300}
 .b-attended{background:#ddf4e4;color:#1a7f4b}
-.b-b80{background:#fbdcd9;color:#a62c27}
-.pct-bar{background:#e3e9f0;border-radius:6px;height:8px;overflow:hidden;width:80px;display:inline-block;vertical-align:middle;margin-right:6px}
-.pct-fill{background:var(--ok);height:100%}
-.profile{background:#eaf3fb;padding:10px;border-radius:8px;font-size:12px;line-height:1.7;margin-bottom:8px}
-@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+.spotCard{border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px;background:#fafcff}
+.spotCard h3{margin:0 0 8px}
+.spotCard .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:13px;margin-bottom:10px}
+.spotCard .kv div{background:#fff;border:1px solid var(--line);padding:7px 9px;border-radius:6px}
+.spotCard .kv b{display:block;font-size:10px;color:#667;text-transform:uppercase}
+.spotCard table{margin-top:8px}
+.photoStrip{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.photoLink{display:block;width:110px;text-decoration:none;color:#334}
+.photoLink img{width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.photoCaption{font-size:10px;line-height:1.3;margin-top:3px}
 </style></head><body>
 <header>⚡ DDL FIELD COMPLIANCE DASHBOARD <span style="font-weight:normal;font-size:13px"><span id="liveDot"></span>Live — updated <span id="lastUpdate">—</span></span></header>
 <div class="wrap">
@@ -51,29 +60,22 @@ input.search{width:100%;padding:12px;border:2px solid var(--p);border-radius:8px
 </div>
 
 <section id="dash">
-  <div class="grid">
-    <div class="metric"><span>Assigned Today</span><b id="total">0</b></div>
-    <div class="metric"><span>Attended</span><b id="attended">0</b></div>
-    <div class="metric"><span>Pending</span><b id="pending">0</b></div>
-    <div class="metric"><span>Compliance %</span><b id="compPct">0%</b></div>
-    <div class="metric"><span>Paid / Part Paid</span><b id="paid">0</b></div>
-    <div class="metric"><span>TD/PD</span><b id="tdpd">0</b></div>
-    <div class="metric"><span>B80 (Bill Revision)</span><b id="b80Count">0</b></div>
-    <div class="metric"><span>Further Action</span><b id="furtherAction">0</b></div>
-  </div>
   <div class="card">
+    <div class="lrd-title">Live Recovery Dashboard</div>
+    <div class="lrd-wrap"><table class="lrd" id="lrd"></table></div>
+  </div>
+  <div class="card pad">
     <div class="actions">
       <button class="primary" onclick="exportExcel()">⬇ Download Excel Report</button>
       <button class="primary" onclick="exportPDFLog()">⬇ Download PDF Daily Log</button>
       <button class="ghost" onclick="loadData(true)">↻ Refresh Now</button>
+      <button class="ghost" style="background:#fbdcd9;color:#a62c27" onclick="clearDashboard()">🗑 Clear Today's Dashboard</button>
     </div>
-    <h3>Staff-wise Compliance</h3>
-    <div class="scroll"><table><thead><tr><th>Staff</th><th>Assigned</th><th>Attended</th><th>Pending</th><th>B80</th><th>Progress</th></tr></thead><tbody id="staffTable"></tbody></table></div>
   </div>
 </section>
 
 <section id="import" class="hidden">
-  <div class="card">
+  <div class="card pad">
     <h2>Import Today's Disconnection List</h2>
     <p style="color:#556;font-size:14px">Importing archives yesterday's list automatically (kept forever in the "Log_" tabs of your Google Sheet) and loads today's assignments as the live working list.</p>
     <input type="file" id="file" accept=".xlsx,.xls,.csv">
@@ -84,24 +86,24 @@ input.search{width:100%;padding:12px;border:2px solid var(--p);border-radius:8px
 </section>
 
 <section id="cases" class="hidden">
-  <div class="card">
+  <div class="card pad">
     <input class="search" id="consumerSearch" placeholder="Search by consumer number, name, address, meter, mobile, staff..." oninput="renderCases()">
     <div class="scroll"><table><thead><tr id="caseHead"></tr></thead><tbody id="caseTable"></tbody></table></div>
   </div>
 </section>
 
 <section id="spotv" class="hidden">
-  <div class="card">
-    <h2>Spot Verification — B80 Bill Revision Cases</h2>
-    <p style="color:#556;font-size:14px">Every case where a staff member selected B80 appears here with the full spot verification detail they submitted.</p>
-    <div class="scroll"><table><thead><tr><th>Consumer</th><th>Staff</th><th>Meter</th><th>Meter Status</th><th>Reading</th><th>Assessment</th><th>Theft/Tampering</th><th>Remark</th></tr></thead><tbody id="spotTable"></tbody></table></div>
+  <div class="card pad">
+    <h2>Spot Verification Reports — B80 Cases</h2>
+    <p style="color:#556;font-size:14px">Every B80 case appears here, one below another, exactly as submitted by staff.</p>
+    <div id="spotList"></div>
   </div>
 </section>
 
 <section id="staff" class="hidden">
-  <div class="card">
+  <div class="card pad">
     <h2>Staff Compliance Form Links</h2>
-    <p style="color:#556;font-size:14px">Send each staff member their own link below (e.g. via WhatsApp/SMS as a one-time share — the link itself, not a messaging bot). Opening it shows only their assigned consumers.</p>
+    <p style="color:#556;font-size:14px">Send each staff member their own link below (e.g. via WhatsApp/SMS as a one-time share — the link itself, not a messaging bot). Opening it shows only their assigned consumers and their own Live Recovery Dashboard.</p>
     <div id="staffLinks"></div>
   </div>
 </section>
@@ -109,175 +111,349 @@ input.search{width:100%;padding:12px;border:2px solid var(--p);border-radius:8px
 </div>
 
 <script>
+// ======== SET THIS to your Apps Script Web App URL, and to where you host staff-compliance.html ========
 const API_URL = "https://script.google.com/macros/s/AKfycbzSAZoV55yZUdUuT6UBIK1HKjW_p3DdF5hSe5z5jl0bAIvmGrSFG1ApasVVC9UpDFSCXQ/exec";
 const STAFF_FORM_BASE_URL = "https://sawalisandip-ui.github.io/DDL-Compliance/staff-compliance.html";
+// ==========================================================================================================
 
 let cases = [];
-let staffList = new Set();
-let filterStaff = '';
-let filterStatus = '';
-
+let currentPage = 'dash';
 function $(id){ return document.getElementById(id); }
-function showPage(page, btn){
-  document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-  $(page).classList.remove('hidden');
-  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+function norm(s){ return String(s??'').toLowerCase(); }
+function get(o,names){ for(let k in o) if(names.some(x=>norm(k)==norm(x)||norm(k).includes(norm(x)))) return o[k]??''; return ''; }
+function esc(v){ return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function money(v){ return '₹'+(+v||0).toLocaleString('en-IN'); }
+
+function showPage(id,btn){
+  document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));
+  $(id).classList.remove('hidden');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  currentPage = id;
+  renderCurrentPage();
+}
+function renderCurrentPage(){
+  refresh(); // Live Recovery Dashboard totals always kept current
+  if(currentPage==='cases') renderCases();
+  if(currentPage==='spotv') renderSpotList();
+  if(currentPage==='staff') renderStaffLinks();
 }
 
-async function loadData(refresh){
+async function loadData(manual){
   try{
     const r = await fetch(API_URL);
     const d = await r.json();
     cases = d.rows || [];
-    staffList = new Set(cases.map(c => c.staff).filter(Boolean));
-    updateDash();
-    renderCases();
-    renderStaffLinks();
     $('lastUpdate').textContent = new Date().toLocaleTimeString();
-    $('offlineNote')?.classList.add('hidden');
+    renderCurrentPage(); // refresh whatever tab the manager is currently viewing — B80 cases, log rows, etc. all show up live
   }catch(err){
-    console.error(err);
-    $('offlineNote')?.classList.remove('hidden');
+    if(manual) alert('Could not reach the server. Check API_URL is set correctly and you have internet access.');
   }
 }
+loadData();
+setInterval(loadData, 15000);
 
-function updateDash(){
-  const assigned = cases.length;
-  const attended = cases.filter(c => c.status && c.status !== 'Pending').length;
-  const pending = assigned - attended;
-  const paid = cases.filter(c => c.payment && ['Fully Paid','Part Paid'].includes(c.payment)).length;
-  const tdpd = cases.filter(c => c.supply && ['Disconnected Today','Already Disconnected'].includes(c.supply)).length;
-  const b80 = cases.filter(c => c.billing === 'Billing Correction Required').length;
-  const further = cases.filter(c => c.action && ['Revisit Required','Escalate','Legal Action'].includes(c.action)).length;
-  const compPct = assigned > 0 ? Math.round((attended / assigned) * 100) : 0;
-  
-  $('total').textContent = assigned;
-  $('attended').textContent = attended;
-  $('pending').textContent = pending;
-  $('compPct').textContent = compPct + '%';
-  $('paid').textContent = paid;
-  $('tdpd').textContent = tdpd;
-  $('b80Count').textContent = b80;
-  $('furtherAction').textContent = further;
-  
-  updateStaffTable();
+function importDDL(){
+  const f = $('file').files[0];
+  if(!f) return alert('Select an Excel file first');
+  const r = new FileReader();
+  r.onload = async e => {
+    const wb = XLSX.read(e.target.result,{type:'array'});
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    const imported = rows.map((o,i)=>({
+      id: 'c'+i+'_'+Date.now(),
+      no: String(get(o,['Consumer Number','Consumer No'])||i+1),
+      pc: get(o,['PC']),
+      name: get(o,['Consumer Name','Name']),
+      staff: String(get(o,['Staff Name','Staff'])).trim().toUpperCase(),
+      address: get(o,['Address']),
+      meter: get(o,['Meter Number','Meter No']),
+      sub: get(o,['Sub Category']),
+      billDueDate: get(o,['Bill Due Date']),
+      lastReceiptDate: get(o,['Last Receipt Date']),
+      billAmount: +String(get(o,['Bill Amount'])).replace(/[^0-9.-]/g,'')||0,
+      arrears: +String(get(o,['Arrears Amount'])).replace(/[^0-9.-]/g,'')||0,
+      closing: +String(get(o,['Closing Balance'])).replace(/[^0-9.-]/g,'')||0,
+      due: +String(get(o,['Total Due Amount Including Current Bill','Total Due'])).replace(/[^0-9.-]/g,'')||0,
+      age: get(o,['Age in Days']),
+      mobile: get(o,['Consumers Mobile Number','Consumer Mobile Number','Mobile Number','Mobile']),
+      meterType: get(o,['Meter Type']),
+      status: 'Pending',
+      raw: o
+    }));
+    $('msg').textContent = 'Uploading '+imported.length+' consumers to server...';
+    try{
+      await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'import', cases: imported}) });
+      $('msg').textContent = imported.length+' consumers imported and synced. Staff can now submit compliance.';
+      loadData();
+    }catch(err){
+      $('msg').textContent = 'Import failed — check your internet connection and API_URL.';
+    }
+  };
+  r.readAsArrayBuffer(f);
 }
 
-function updateStaffTable(){
-  const tbody = $('staffTable');
-  tbody.innerHTML = '';
-  staffList.forEach(staff => {
-    const staffCases = cases.filter(c => c.staff === staff);
-    const staffAttended = staffCases.filter(c => c.status && c.status !== 'Pending').length;
-    const staffB80 = staffCases.filter(c => c.billing === 'Billing Correction Required').length;
-    const pct = staffCases.length > 0 ? Math.round((staffAttended / staffCases.length) * 100) : 0;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${staff}</td><td>${staffCases.length}</td><td>${staffAttended}</td><td>${staffCases.length - staffAttended}</td><td>${staffB80}</td><td><div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div> ${pct}%</td>`;
-    tbody.appendChild(tr);
+// ---------- shared Live Recovery summary logic (same formula as staff page) ----------
+function summarize(list){
+  const s = { assigned:list.length, assignedAmt:0, td:0, tdAmt:0, pd:0, pdAmt:0, paid:0, paidAmt:0, b80:0, b80Amt:0, balance:0, balanceAmt:0, attended:0 };
+  list.forEach(x=>{
+    const due = +x.due||0;
+    s.assignedAmt += due;
+    if(x.status==='Attended'){
+      s.attended++;
+      if(x.compliance==='TD'){ s.td++; s.tdAmt+=due; }
+      else if(x.compliance==='PD'){ s.pd++; s.pdAmt+=due; }
+      else if(x.compliance==='Paid'){ s.paid++; s.paidAmt+=(+x.amount||0); }
+      else if(x.compliance==='B80'){ s.b80++; s.b80Amt+=due; }
+    } else {
+      s.balance++; s.balanceAmt+=due;
+    }
   });
+  s.attendedAmt = s.paidAmt + s.tdAmt + s.pdAmt + s.b80Amt;
+  s.progress = s.assigned ? (100*s.attended/s.assigned) : 0;
+  return s;
+}
+function lrdRow(label, s, cls){
+  return `<tr class="${cls||''}"><td>${esc(label)}</td>
+    <td>${s.assigned}</td><td>${money(s.assignedAmt)}</td>
+    <td>${s.td}</td><td>${money(s.tdAmt)}</td>
+    <td>${s.pd}</td><td>${money(s.pdAmt)}</td>
+    <td>${s.paid}</td><td>${money(s.paidAmt)}</td>
+    <td>${s.b80}</td><td>${money(s.b80Amt)}</td>
+    <td>${s.balance}</td><td>${money(s.balanceAmt)}</td>
+    <td>${s.attended}</td><td>${money(s.attendedAmt)}</td>
+    <td class="prog">${s.progress.toFixed(0)}%</td></tr>`;
+}
+const LRD_HEAD = `<thead>
+  <tr><th rowspan="2">Staff Name</th><th colspan="2">Total Consumers Assigned</th><th colspan="2">TD</th><th colspan="2">PD</th>
+  <th colspan="2">Paid</th><th colspan="2">B80</th><th colspan="2">Balance</th><th colspan="2">Total Attended</th><th rowspan="2">Progress</th></tr>
+  <tr><th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th>
+  <th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th><th>Consumers</th><th>Amount</th></tr>
+</thead>`;
+
+function refresh(){
+  const byStaff = {};
+  cases.forEach(x => (byStaff[x.staff||'Unassigned'] ??= []).push(x));
+  const rows = Object.entries(byStaff).sort((a,b)=>a[0].localeCompare(b[0])).map(([name,list]) => lrdRow(name, summarize(list))).join('');
+  const totalRow = lrdRow('Total', summarize(cases), 'totalRow');
+  $('lrd').innerHTML = LRD_HEAD + '<tbody>' + (rows || '<tr><td colspan="15">No data yet — import today\'s DDL to begin.</td></tr>') + totalRow + '</tbody>';
 }
 
+const CASE_COLS = [
+  ['Consumer No','no'],['Name','name'],['Staff','staff'],['Address','address'],['Meter','meter'],
+  ['Sub Category','sub'],['Total Due','due'],['Status','status'],['Compliance','compliance'],['Remarks','remarks']
+];
+let caseSortKey = null, caseSortDir = 1;
+function toggleCaseSort(key){
+  if(caseSortKey===key) caseSortDir = -caseSortDir; else { caseSortKey = key; caseSortDir = 1; }
+  renderCases();
+}
 function renderCases(){
-  const search = ($('consumerSearch')?.value || '').toLowerCase();
-  const filtered = cases.filter(c => {
-    const text = [c.no, c.name, c.address, c.meter, c.mobile, c.staff].join(' ').toLowerCase();
-    return text.includes(search);
+  const q = norm($('consumerSearch').value);
+  let old = {};
+  document.querySelectorAll('.cf').forEach(i => old[i.dataset.k] = i.value);
+  $('caseHead').innerHTML = CASE_COLS.map(c => {
+    const arrow = caseSortKey===c[1] ? (caseSortDir===1?'▲':'▼') : '↕';
+    return `<th><span class="colLabel" onclick="toggleCaseSort('${c[1]}')" style="cursor:pointer">${c[0]} <span style="font-size:10px;opacity:.6">${arrow}</span></span><br>
+    <input class="cf" data-k="${c[1]}" value="${esc(old[c[1]]||'')}" placeholder="Filter..." onclick="event.stopPropagation()" oninput="renderCases()"></th>`;
+  }).join('') + '<th>PDF</th>';
+
+  let rows = cases.filter(x => !q || [x.no,x.name,x.address,x.meter,x.mobile,x.staff].join(' ').toLowerCase().includes(q));
+  document.querySelectorAll('.cf').forEach(i => {
+    if(norm(i.value)) rows = rows.filter(x => norm(x[i.dataset.k]).includes(norm(i.value)));
   });
-  
-  const tbody = $('caseTable');
-  tbody.innerHTML = '';
-  const head = $('caseHead');
-  if(filtered.length > 0 && head.innerHTML === ''){
-    head.innerHTML = '<th>Consumer</th><th>Staff</th><th>Due</th><th>Status</th><th>Billing</th><th>Remarks</th>';
+  if(caseSortKey){
+    rows = rows.slice().sort((a,b)=>{
+      const av = a[caseSortKey], bv = b[caseSortKey];
+      const an = parseFloat(String(av).replace(/[^0-9.-]/g,'')), bn = parseFloat(String(bv).replace(/[^0-9.-]/g,''));
+      let cmp;
+      if(!isNaN(an) && !isNaN(bn) && String(av).trim()!=='' && String(bv).trim()!=='') cmp = an-bn;
+      else cmp = String(av??'').localeCompare(String(bv??''));
+      return cmp*caseSortDir;
+    });
   }
-  filtered.forEach(c => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${c.no || '—'} ${c.name || ''}</td><td>${c.staff || '—'}</td><td>₹${c.due || 0}</td><td><span class="badge ${c.status === 'Pending' ? 'b-pending' : 'b-attended'}">${c.status || 'Pending'}</span></td><td>${c.billing || '—'}</td><td>${c.remarks || '—'}</td>`;
-    tbody.appendChild(tr);
-  });
+
+  $('caseTable').innerHTML = rows.map(x => `<tr>
+    <td><b>${esc(x.no)}</b></td><td>${esc(x.name)}</td><td>${esc(x.staff)}</td><td>${esc(x.address)}</td>
+    <td>${esc(x.meter)}</td><td>${esc(x.sub)}</td><td>${money(x.due)}</td>
+    <td><span class="badge ${x.status==='Attended'?'b-attended':'b-pending'}">${esc(x.status||'Pending')}</span></td>
+    <td>${esc(x.compliance||'—')}</td><td>${esc(x.remarks)}</td>
+    <td>${x.status==='Attended' ? `<button class="ghost" onclick='generateConsumerPDF(${JSON.stringify(x.no)})'>PDF</button>` : '—'}</td>
+  </tr>`).join('') || `<tr><td colspan="${CASE_COLS.length+1}">No consumers found.</td></tr>`;
+}
+
+function renderSpotList(){
+  const spots = cases.filter(x => x.compliance === 'B80' && x.spot);
+  $('spotList').innerHTML = spots.length ? spots.map(x => {
+    let s = {}; try{ s = JSON.parse(x.spot); }catch(e){}
+    const applianceRows = (s.appliances||[]).map((a,i)=>`<tr><td>${i+1}</td><td>${esc(a.name)}</td><td>${esc(a.qty)}</td><td>${esc(a.watt)}</td><td>${esc(a.hours)}</td><td>${esc(a.kwh)} kWh</td></tr>`).join('');
+    return `<div class="spotCard">
+      <h3>Consumer ${esc(x.no)} — ${esc(x.name)}</h3>
+      <div class="kv">
+        <div><b>Staff</b>${esc(x.staff)}</div>
+        <div><b>Meter No.</b>${esc(s.meter)}</div>
+        <div><b>Make</b>${esc(s.make)||'—'}</div>
+        <div><b>Phase</b>${esc(s.phase)}</div>
+        <div><b>Meter Status</b>${esc(s.status)}</div>
+        <div><b>Reading</b>${esc(s.reading)} kWh</div>
+        <div><b>Assessment Required</b>${esc(s.assessment)||'—'}</div>
+        <div><b>Theft Suspected</b>${esc(s.theft)||'—'}</div>
+      </div>
+      <table><thead><tr><th>Sr.No</th><th>Appliance</th><th>Qty</th><th>Wattage</th><th>Hours</th><th>Consumption</th></tr></thead>
+      <tbody>${applianceRows || '<tr><td colspan="6">No appliances listed</td></tr>'}</tbody></table>
+      <div class="kv" style="margin-top:8px">
+        <div><b>Total per day</b>${esc(s.daily)}</div>
+        <div><b>Consumption per month</b>${esc(s.monthly)}</div>
+        <div><b>Remark</b>${esc(s.remark)||'—'}</div>
+      </div>
+      ${(s.photos||[]).length ? `<div class="photoStrip">${s.photos.map(p=>`
+        <a href="${p.viewUrl||p.url}" target="_blank" class="photoLink">
+          <img src="${p.url}">
+          <div class="photoCaption">${p.lat?p.lat.toFixed(5)+', '+p.lng.toFixed(5):'No GPS'}<br>${esc(p.timestamp)}</div>
+        </a>`).join('')}</div>` : ''}
+      <div class="kv">
+        <div><b>Staff Details and Sign</b>${esc(s.staffName)} (CPF ${esc(s.cpf)}, ${esc(s.designation)})</div>
+        <div><b>Office</b>${esc(s.office)}</div>
+        <div><b>Verification Timestamp</b>${esc(s.performedAt)}</div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button class="ghost" onclick='generateConsumerPDF(${JSON.stringify(x.no)})'>⬇ Download PDF</button>
+        <button class="ghost" onclick='printSpot(${JSON.stringify(x.no)})'>🖶 Print</button>
+      </div>
+    </div>`;
+  }).join('') : '<p>No B80 spot verification cases yet.</p>';
 }
 
 function renderStaffLinks(){
-  const div = $('staffLinks');
-  div.innerHTML = '';
-  staffList.forEach(staff => {
-    const url = `${STAFF_FORM_BASE_URL}?staff=${encodeURIComponent(staff)}`;
-    const p = document.createElement('div');
-    p.className = 'profile';
-    p.innerHTML = `<b>${staff}</b><br><code style="background:#eef3f8;padding:6px;border-radius:4px;display:inline-block;margin-top:6px;font-size:11px;overflow:auto;max-width:100%">${url}</code>`;
-    div.appendChild(p);
-  });
+  const staffNames = [...new Set(cases.map(x=>x.staff).filter(Boolean))].sort();
+  $('staffLinks').innerHTML = staffNames.length ? staffNames.map(s => {
+    const link = STAFF_FORM_BASE_URL + '?staff=' + encodeURIComponent(s);
+    return `<div style="padding:8px 0;border-bottom:1px solid #eee"><b>${esc(s)}</b><br><a href="${link}" target="_blank">${link}</a></div>`;
+  }).join('') : '<p>Import a DDL to see staff names.</p>';
+}
+
+async function clearDashboard(){
+  if(!confirm("This archives today's full data permanently (as a Log_ tab in your Google Sheet, exactly like a new import would) and then clears the dashboard for a fresh start. This cannot be undone from here — but nothing is deleted, only archived. Continue?")) return;
+  try{
+    await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'clear'}) });
+    await loadData(true);
+    alert("Today's data has been archived and the dashboard is now clear. Import a new DDL whenever you're ready.");
+  }catch(err){
+    alert('Could not reach the server — check your internet connection and try again.');
+  }
 }
 
 function exportExcel(){
-  const ws = XLSX.utils.json_to_sheet(cases);
+  if(!cases.length) return alert('No data to export yet.');
+  const rows = cases.map(x => ({
+    'Consumer No': x.no, 'PC': x.pc, 'Consumer Name': x.name, 'Staff': x.staff, 'Address': x.address,
+    'Meter Number': x.meter, 'Sub Category': x.sub, 'Bill Due Date': x.billDueDate, 'Last Receipt Date': x.lastReceiptDate,
+    'Bill Amount': x.billAmount, 'Arrears Amount': x.arrears, 'Closing Balance': x.closing, 'Total Due Amount': x.due,
+    'Age in Days': x.age, 'Mobile Number': x.mobile, 'Meter Type': x.meterType,
+    'Status': x.status, 'Compliance': x.compliance||'', 'Amount Collected': x.amount||'',
+    'Compliance Remark': x.remarks||'', 'Updated At': x.time||''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Cases');
-  XLSX.writeFile(wb, 'DDL_Compliance_' + new Date().toISOString().split('T')[0] + '.xlsx');
+  XLSX.utils.book_append_sheet(wb, ws, 'Compliance');
+  const today = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `DDL_Compliance_Report_${today}.xlsx`);
 }
 
 function exportPDFLog(){
-  const doc = new jsPDF();
-  const date = new Date().toLocaleDateString();
-  doc.setFontSize(14);
-  doc.text('DDL Field Compliance Daily Log', 10, 10);
-  doc.setFontSize(10);
-  doc.text('Date: ' + date, 10, 20);
-  const tableData = cases.map(c => [
-    c.no || '—',
-    c.name || '—',
-    c.staff || '—',
-    c.status || 'Pending',
-    c.payment || '—',
-    c.supply || '—',
-    c.remarks || '—'
-  ]);
-  doc.autoTable({
-    head: [['Consumer No', 'Name', 'Staff', 'Status', 'Payment', 'Supply', 'Remarks']],
-    body: tableData,
-    startY: 30,
-    styles: { fontSize: 9 }
+  if(!cases.length) return alert('No data to export yet.');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const today = new Date().toLocaleDateString();
+  const s = summarize(cases);
+
+  doc.setFontSize(15); doc.setFont('helvetica','bold');
+  doc.text('DAILY LIVE RECOVERY DASHBOARD', 148, 14, {align:'center'});
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text(`Date: ${today}   |   Assigned: ${s.assigned}   |   Attended: ${s.attended}   |   Balance: ${s.balance}   |   Progress: ${s.progress.toFixed(1)}%`, 148, 20, {align:'center'});
+
+  const byStaff = {};
+  cases.forEach(x => (byStaff[x.staff||'Unassigned'] ??= []).push(x));
+  const body = Object.entries(byStaff).sort((a,b)=>a[0].localeCompare(b[0])).map(([name,list])=>{
+    const z = summarize(list);
+    return [name, z.assigned, money(z.assignedAmt), z.td, money(z.tdAmt), z.pd, money(z.pdAmt), z.paid, money(z.paidAmt), z.b80, money(z.b80Amt), z.balance, money(z.balanceAmt), z.attended, money(z.attendedAmt), z.progress.toFixed(0)+'%'];
   });
-  doc.save('DDL_Daily_Log_' + new Date().toISOString().split('T')[0] + '.pdf');
+  body.push(['TOTAL', s.assigned, money(s.assignedAmt), s.td, money(s.tdAmt), s.pd, money(s.pdAmt), s.paid, money(s.paidAmt), s.b80, money(s.b80Amt), s.balance, money(s.balanceAmt), s.attended, money(s.attendedAmt), s.progress.toFixed(0)+'%']);
+
+  doc.autoTable({
+    startY: 26,
+    head: [['Staff','Assigned #','Assigned ₹','TD #','TD ₹','PD #','PD ₹','Paid #','Paid ₹','B80 #','B80 ₹','Balance #','Balance ₹','Attended #','Attended ₹','Progress']],
+    body,
+    styles: { fontSize: 6.5, cellPadding: 1.3 },
+    headStyles: { fillColor: [18,75,125] }
+  });
+
+  const dateStamp = new Date().toISOString().slice(0,10);
+  doc.save(`Daily_Live_Recovery_Dashboard_${dateStamp}.pdf`);
 }
 
-function importDDL(){
-  const file = $('file').files[0];
-  if(!file) return alert('Select a file');
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try{
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, {type: 'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws);
-      cases = rows.map(r => ({
-        no: r['Consumer No'] || r['no'],
-        name: r['Name'] || r['name'],
-        address: r['Address'] || r['address'],
-        meter: r['Meter'] || r['meter'],
-        mobile: r['Mobile'] || r['mobile'],
-        due: r['Due'] || r['due'] || 0,
-        staff: r['Staff'] || r['staff'] || 'Unassigned',
-        status: 'Pending',
-        payment: '',
-        supply: '',
-        billing: '',
-        remarks: ''
-      }));
-      staffList = new Set(cases.map(c => c.staff).filter(Boolean));
-      updateDash();
-      $('msg').textContent = '✓ Imported ' + cases.length + ' consumers';
-      setTimeout(() => { $('msg').textContent = ''; }, 3000);
-    }catch(err){
-      $('msg').textContent = '✗ Error: ' + err.message;
+function buildSpotPdf(x){
+  let spot = {};
+  try{ spot = x.spot ? JSON.parse(x.spot) : {}; }catch(e){}
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  let y = 15;
+  function line(t,b){ doc.setFont('helvetica', b?'bold':'normal'); const a = doc.splitTextToSize(String(t||''),180); doc.text(a,15,y); y += a.length*6; }
+  doc.setFontSize(15); doc.setFont('helvetica','bold');
+  doc.text(x.compliance==='B80' ? 'BILLING SPOT VERIFICATION REPORT' : 'FIELD COMPLIANCE REPORT', 105, y, {align:'center'}); y+=10;
+  doc.setFontSize(10);
+  line(`Consumer No: ${x.no}  |  Name: ${x.name}`, true);
+  line(`Address: ${x.address||''}`);
+  line(`Staff: ${x.staff}  |  Meter: ${x.meter||''}  |  Sub Category: ${x.sub||''}`);
+  line(`Total Due: ₹${(+x.due||0).toLocaleString()}`);
+  line(`Compliance: ${x.compliance||''}  |  Amount Collected: ₹${x.amount||0}`);
+  line(`Compliance Remark: ${x.remarks||'—'}`);
+  if(x.compliance === 'B80'){
+    y+=4; doc.setDrawColor(200); doc.line(15,y,195,y); y+=6;
+    line('BILLING SPOT VERIFICATION', true);
+    line(`Consumer Number: ${spot.consumerNo||x.no}`);
+    line(`Meter No.: ${spot.meter||''}  |  Make: ${spot.make||''}  |  Phase: ${spot.phase||''}`);
+    line(`Meter Status: ${spot.status||''}${spot.reading?' | Reading: '+spot.reading+' kWh':''}`);
+    line(`Consumption Assessment Required: ${spot.assessment||'—'}  |  Theft Suspected: ${spot.theft||'—'}`);
+    if((spot.appliances||[]).length){
+      y+=2; line('Appliances:', true);
+      spot.appliances.forEach((l,i) => line(`${i+1}. ${l.name||''} | Qty ${l.qty||0} | ${l.watt||0} W | ${l.hours||0} hrs/day | ${l.kwh||0} kWh/day`));
     }
-  };
-  reader.readAsArrayBuffer(file);
+    line(`Total per day: ${spot.daily||''}  |  Consumption per month: ${spot.monthly||''}`, true);
+    line(`Remark: ${spot.remark||'—'}`);
+    if((spot.photos||[]).length){
+      y+=2; line('Site Photos (tap link to open):', true);
+      spot.photos.forEach((p,i)=>{
+        const gps = p.lat ? `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)} (±${p.accuracy}m)` : 'No GPS';
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(18,75,125);
+        doc.textWithLink(`Photo ${i+1} — ${gps} — ${p.timestamp||''}`, 15, y, { url: p.viewUrl || p.url });
+        doc.setTextColor(0,0,0);
+        y += 6;
+      });
+    }
+    y+=2; line(spot.office || 'Assistant Engineer, MSEDCL, Chakan U Section', true);
+    line(`Staff Name: ${spot.staffName||''}  |  CPF Number: ${spot.cpf||''}  |  Designation: ${spot.designation||''}`);
+    line(`Verification Timestamp: ${spot.performedAt||''}`);
+  }
+  y+=8; line('Field Officer Signature: _______________________');
+  line(`Updated: ${x.time||''}`);
+  return doc;
 }
 
-loadData();
-setInterval(() => loadData(), 30000);
+function generateConsumerPDF(no){
+  const x = cases.find(c => String(c.no)===String(no));
+  if(!x) return;
+  const doc = buildSpotPdf(x);
+  doc.save(`${x.compliance==='B80'?'Spot_Verification':'Compliance'}_${x.no}.pdf`);
+}
+
+function printSpot(no){
+  const x = cases.find(c => String(c.no)===String(no));
+  if(!x) return;
+  const doc = buildSpotPdf(x);
+  doc.autoPrint();
+  window.open(doc.output('bloburl'), '_blank');
+}
 </script>
 </body></html>
