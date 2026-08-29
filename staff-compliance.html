@@ -1,163 +1,171 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Field Compliance</title>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
-:root{--p:#124b7d;--ok:#1a7f4b;--warn:#b8860b;--bg:#f3f6fa;--line:#d8e1eb}
+:root{--p:#124b7d;--ok:#1a7f4b;--warn:#b8860b;--bg:#f3f6fa;--line:#d8e1eb;--head:#fde3d0}
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#172033;font-size:16px}
-header{background:var(--p);color:#fff;padding:16px;font-size:19px;font-weight:bold;position:sticky;top:0;z-index:5}
-.wrap{max-width:600px;margin:auto;padding:14px}
-.card{background:#fff;padding:16px;border-radius:12px;margin-bottom:14px;box-shadow:0 1px 8px #00000014}
-input,select,textarea{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;margin-top:4px}
-label{font-size:13px;font-weight:bold;display:block;margin:12px 0 2px;color:#334}
-.searchbox{font-size:17px;padding:15px!important;border:2px solid var(--p)}
-.results{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:8px}
-.result{padding:13px;border-bottom:1px solid var(--line)}
-.result:active{background:#eef5fc}
-.result b{color:var(--p);font-size:16px}
-button{border:0;border-radius:9px;padding:15px;font-size:16px;font-weight:bold;cursor:pointer;width:100%}
-.primary{background:var(--p);color:#fff;margin-top:16px}
-.secondary{background:#eef2f7;color:#334;margin-top:8px}
-.hidden{display:none}
-.consumerHeader{background:#eaf2fb;border-radius:10px;padding:14px;margin-bottom:12px}
-.consumerHeader h2{margin:0 0 6px;font-size:18px}
-.consumerHeader div{font-size:13px;color:#445;line-height:1.6}
-.warn{background:#fff3cd;padding:10px;border-radius:8px;font-size:13px;margin-top:10px}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a7f4b;color:#fff;padding:14px 22px;border-radius:10px;font-weight:bold;box-shadow:0 4px 14px #0004;z-index:20}
-.subcard{border:1px solid var(--line);padding:12px;border-radius:10px;margin-top:10px;background:#fafcff}
-.profile{background:#eaf3fb;padding:12px;border-radius:8px;font-size:13px;line-height:1.7}
-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
-th,td{padding:6px;border-bottom:1px solid var(--line);text-align:left}
-table input{padding:6px;font-size:13px;margin-top:0}
-.rmv{background:#f4d4d1;color:#a62c27;width:auto;padding:6px 10px}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#172033}
+header{background:var(--p);color:#fff;padding:14px 18px;font-size:18px;font-weight:bold;position:sticky;top:0;z-index:20}
+.wrap{padding:12px;max-width:1600px;margin:auto}
+.card{background:#fff;padding:14px;border-radius:12px;margin-bottom:14px;box-shadow:0 1px 8px #00000014}
+.hidden{display:none!important}
+input,select,textarea{padding:9px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px}
+label{font-size:12px;font-weight:bold;display:block;margin:8px 0 3px;color:#334}
+button{border:0;border-radius:8px;padding:10px 15px;font-size:14px;font-weight:bold;cursor:pointer}
+.primary{background:var(--p);color:#fff}
+.secondary{background:#eef2f7;color:#334}
+.rmv{background:#f4d4d1;color:#a62c27;padding:6px 10px}
 .offline{background:#f8d7da;color:#611;padding:10px;border-radius:8px;font-size:13px;margin-bottom:10px}
-.step{font-size:11px;font-weight:bold;color:var(--p);text-transform:uppercase;letter-spacing:.03em;margin-top:14px}
+
+/* ---- Live Recovery Dashboard table ---- */
+.lrd-title{background:var(--head);text-align:center;font-weight:bold;padding:8px;border-radius:6px 6px 0 0;font-size:15px}
+.lrd-wrap{overflow-x:auto}
+table.lrd{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}
+table.lrd th,table.lrd td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+table.lrd thead th{background:#eef3f8}
+table.lrd .prog{font-weight:bold;color:var(--ok)}
+
+/* ---- Consumer list ---- */
+.searchbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.searchbar input{flex:1;min-width:220px;font-size:15px;padding:11px;border:2px solid var(--p)}
+.tableScroll{overflow:auto;max-height:600px;border:1px solid var(--line);border-radius:8px}
+table.consumers{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;white-space:nowrap}
+table.consumers th,table.consumers td{border-bottom:1px solid var(--line);border-right:1px solid #eef1f5;padding:7px 9px;text-align:left}
+table.consumers thead th{background:#eef3f8;position:sticky;top:0;z-index:2}
+table.consumers thead tr.filters th{background:#fff;position:sticky;top:34px;z-index:2;padding:3px 5px}
+table.consumers thead tr.filters input{width:100%;font-size:11px;padding:5px;box-sizing:border-box}
+.consumerLink{color:var(--p);font-weight:bold;text-decoration:underline;cursor:pointer}
+
+/* ---- Modal ---- */
+.overlay{position:fixed;inset:0;background:#0007;z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 10px}
+.modal{background:#fff;border-radius:12px;max-width:720px;width:100%;padding:20px;margin-top:10px}
+.consumerHeader{background:#eaf2fb;border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.7}
+.timestamp{float:right;font-size:12px;color:#556;font-weight:normal}
+.subcard{border:1px solid var(--line);padding:12px;border-radius:10px;margin-top:10px;background:#fafcff}
+.profile{background:#eaf3fb;padding:10px;border-radius:8px;font-size:12px;line-height:1.7;margin-bottom:8px}
+table.loads{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+table.loads th,table.loads td{padding:5px;border-bottom:1px solid var(--line);text-align:left}
+table.loads input{width:100%;padding:6px;font-size:12px;box-sizing:border-box}
+.totalsRow{font-weight:bold;background:#f7f9fc}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+.photoGrid{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.photoThumb{position:relative;width:100px}
+.photoThumb img{width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.photoThumb .meta{font-size:10px;color:#556;line-height:1.3;margin-top:3px}
+.photoThumb .rmv{position:absolute;top:-6px;right:-6px;width:22px;height:22px;padding:0;border-radius:50%;font-size:13px;line-height:1}
 </style></head><body>
 <header>⚡ Field Compliance</header>
 <div class="wrap">
 
 <div id="offlineNote" class="offline hidden">No connection to server — check your internet and reload.</div>
 
+<!-- One-time staff profile capture -->
 <div id="profileCard" class="card hidden">
   <h3>One-time setup</h3>
-  <p style="font-size:13px;color:#556">This is recorded on every Spot Verification report you submit from this phone.</p>
-  <label>Your Name</label>
-  <input id="pName">
-  <label>CPF Number</label>
-  <input id="pCpf">
-  <label>Designation</label>
-  <input id="pDesignation" placeholder="e.g. Assistant Engineer" value="Assistant Engineer">
-  <button class="primary" onclick="saveProfile()">Save & Continue</button>
+  <p style="font-size:13px;color:#556">Recorded on every Spot Verification report you submit from this device.</p>
+  <label>Your Name</label><input id="pName" style="width:100%">
+  <label>CPF Number</label><input id="pCpf" style="width:100%">
+  <label>Designation</label><input id="pDesignation" style="width:100%" value="Assistant Engineer">
+  <button class="primary" onclick="saveProfile()" style="margin-top:10px;width:100%">Save & Continue</button>
 </div>
 
 <div id="mainUi" class="hidden">
-<div id="searchCard" class="card">
-  <label>Search your consumer (number, name, address, meter, mobile)</label>
-  <input id="q" class="searchbox" placeholder="Type to search..." oninput="doSearch()">
-  <div id="results" class="results hidden"></div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <div class="lrd-title">Live Recovery Dashboard — <span id="myName"></span></div>
+  <div class="lrd-wrap"><table class="lrd" id="myLrd"></table></div>
 </div>
 
-<div id="formCard" class="card hidden">
+<div class="card">
+  <div class="searchbar">
+    <input id="q" placeholder="Search consumer number, name, address, meter, mobile..." oninput="renderTable()">
+  </div>
+  <div class="tableScroll">
+    <table class="consumers">
+      <thead><tr id="colHead"></tr><tr class="filters" id="colFilters"></tr></thead>
+      <tbody id="consumerBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- Compliance + Spot Verification modal -->
+<div id="overlay" class="overlay hidden">
+<div class="modal">
   <div class="consumerHeader">
-    <h2 id="cName"></h2>
-    <div>
-      Consumer No: <b id="cNo"></b> &nbsp; Meter: <b id="cMeter"></b><br>
-      Address: <span id="cAddr"></span><br>
-      Sub Category: <span id="cSub"></span><br>
-      Closing Balance: ₹<b id="cDue"></b> &nbsp; Status: <b id="cStatus"></b>
-    </div>
+    <span class="timestamp" id="modalTimestamp"></span>
+    <b id="mName"></b><br>
+    Consumer No: <b id="mNo"></b> &nbsp; Meter: <b id="mMeter"></b><br>
+    Address: <span id="mAddr"></span><br>
+    Total Due: ₹<b id="mDue"></b>
   </div>
 
-  <div class="step">1. Compliance</div>
-  <select id="compliance" onchange="toggleSpot()">
-    <option value="Paid">Paid</option>
-    <option value="Part Paid">Part Paid</option>
-    <option value="TD/PD">TD/PD</option>
-    <option value="B80">B80 — Bill Revision Required</option>
-  </select>
-  <label>Amount Paid (₹)</label>
-  <input id="amount" type="number" placeholder="0">
-
-  <div class="step">2. Supply / Disconnection</div>
-  <select id="supply">
-    <option>Disconnection Pending</option>
-    <option>Temporarily Disconnected (TD)</option>
-    <option>Permanently Disconnected (PD)</option>
-    <option>Already TD/PD</option>
-    <option>Supply Found ON</option>
+  <label>Compliance</label>
+  <select id="compliance" style="width:100%" onchange="toggleSpot()">
+    <option value="Paid">1. Paid</option>
+    <option value="TD">2. TD</option>
+    <option value="PD">3. PD</option>
+    <option value="B80">4. B80</option>
   </select>
 
-  <div class="step">3. TD/PD but using another source</div>
-  <select id="alt">
-    <option>No</option>
-    <option>Yes - Another Meter</option>
-    <option>Yes - Other Source</option>
-    <option>Suspected Unauthorized Supply</option>
-  </select>
-
-  <div class="step">4. Consumer denied paying</div>
-  <select id="response">
-    <option>Will Pay</option>
-    <option>Refused to Pay</option>
-    <option>Consumer Unavailable</option>
-    <option>Premises Locked</option>
-    <option>Other</option>
-  </select>
-
-  <div class="step">5. Further Action</div>
-  <select id="action">
-    <option>Close Case</option>
-    <option>Revisit</option>
-    <option>Billing Correction</option>
-    <option>Immediate Disconnection</option>
-    <option>Enforcement Verification</option>
-    <option>Supervisor Verification</option>
-  </select>
-  <label>Revisit Date (if applicable)</label>
-  <input id="revisit" type="date">
-  <label>Remarks</label>
-  <textarea id="remarks" rows="3" placeholder="Any additional notes..."></textarea>
+  <div id="amountRow">
+    <label>Amount Paid (₹)</label>
+    <input id="amount" type="number" style="width:100%" placeholder="0">
+  </div>
 
   <div id="spotForm" class="subcard hidden">
-    <b>Spot Verification — B80 Bill Revision</b>
-    <div class="profile" id="spotProfile"></div>
-    <label>Meter Serial Number</label>
-    <input id="smeter">
-    <label>Reading / Faulty / No Display</label>
-    <select id="mstatus" onchange="readingToggle()">
-      <option>Reading Available</option>
-      <option>Faulty</option>
-      <option>No Display</option>
+    <b>B80 Spot Verification</b>
+    <label>Meter Serial</label>
+    <input id="meter" style="width:100%">
+    <label>Meter Status</label>
+    <select id="meterStatus" style="width:100%" onchange="toggleReading()">
+      <option value="ok">Reading Available</option>
+      <option value="burnt">Meter Burnt/Faulty</option>
+      <option value="missing">Meter Not Found</option>
     </select>
     <div id="readingDiv">
       <label>Current Reading</label>
-      <input id="reading" type="number">
+      <input id="reading" type="number" style="width:100%">
     </div>
-    <label>Assessment Required</label>
-    <select id="assessment"><option>No</option><option>Yes</option></select>
+    <label>Consumption Assessment</label>
+    <select id="assessment" style="width:100%"><option>No</option><option>Yes</option></select>
     <label>Suspected Theft/Tampering</label>
-    <select id="theft"><option>No</option><option>Yes</option></select>
-    <label>Spot Remark</label>
-    <textarea id="spotRemark" rows="2"></textarea>
+    <select id="theft" style="width:100%"><option>No</option><option>Yes</option></select>
+    <label>Remark</label>
+    <textarea id="spotRemark" style="width:100%;margin-top:4px" rows="2"></textarea>
   </div>
 
-  <button class="primary" onclick="submitCase()">Save Compliance</button>
-  <button class="secondary" onclick="backToSearch()">Back to Search</button>
+  <label style="margin-top:12px">Revisit Required</label>
+  <select id="revisit" style="width:100%"><option>No</option><option>Yes</option></select>
+
+  <div id="revisitDateDiv" class="hidden">
+    <label>Revisit Date</label>
+    <input id="revisitDate" type="date" style="width:100%">
+  </div>
+
+  <label>Remarks</label>
+  <textarea id="remarks" style="width:100%;margin-top:4px" rows="2" placeholder="Additional notes..."></textarea>
+
+  <button class="primary" onclick="submitCompliance()" style="width:100%;margin-top:12px">Save Compliance</button>
+  <button class="secondary" onclick="closeModal()" style="width:100%;margin-top:6px">Cancel</button>
 </div>
 </div>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzSAZoV55yZUdUuT6UBIK1HKjW_p3DdF5hSe5z5jl0bAIvmGrSFG1ApasVVC9UpDFSCXQ/exec";
-
 const params = new URLSearchParams(location.search);
-const myStaffName = (params.get('staff')||'').trim().toLowerCase();
+const myStaffName = (params.get('staff') || '').trim().toLowerCase();
 
 let allCases = [];
+let myProfile = JSON.parse(localStorage.getItem('staffProfile') || '{}');
 let selected = null;
-let profile = {};
 
 function $(id){ return document.getElementById(id); }
-function norm(s){ return String(s??'').toLowerCase(); }
+function norm(s){ return String(s ?? '').toLowerCase(); }
 
 async function loadCases(){
   try{
@@ -169,157 +177,131 @@ async function loadCases(){
     $('offlineNote').classList.remove('hidden');
   }
 }
-loadCases();
-setInterval(loadCases, 20000);
 
 function myCases(){
   if(!myStaffName) return allCases;
   return allCases.filter(c => norm(c.staff).includes(myStaffName));
 }
 
-function searchable(x){
-  return [x.no,x.name,x.address,x.meter,x.mobile,x.staff].join(' ').toLowerCase();
+function saveProfile(){
+  const prof = {
+    name: $('pName').value,
+    cpf: $('pCpf').value,
+    designation: $('pDesignation').value
+  };
+  localStorage.setItem('staffProfile', JSON.stringify(prof));
+  myProfile = prof;
+  $('profileCard').classList.add('hidden');
+  $('mainUi').classList.remove('hidden');
+  $('myName').textContent = prof.name || 'Staff';
+  renderTable();
 }
 
-function doSearch(){
+function renderTable(){
   const q = norm($('q').value);
-  const box = $('results');
-  if(!q){ box.classList.add('hidden'); box.innerHTML=''; return; }
-  const r = myCases().filter(x => searchable(x).includes(q)).slice(0,50);
-  box.classList.remove('hidden');
-  box.innerHTML = r.length ? r.map(x =>
-    `<div class="result" onclick="selectCase('${x.no}')"><b>${x.no}</b> — ${x.name||''}<br><small>${x.address||''} | Due: ₹${(+x.due||0).toLocaleString()} | ${x.status||'Pending'}</small></div>`
-  ).join('') : '<div class="result">No match found in your assigned list</div>';
+  const filtered = myCases().filter(c => {
+    const text = [c.no, c.name, c.address, c.meter, c.mobile].join(' ').toLowerCase();
+    return text.includes(q);
+  });
+  
+  const head = $('colHead');
+  if(head.innerHTML === ''){
+    head.innerHTML = '<th>Consumer No</th><th>Name</th><th>Address</th><th>Meter</th><th>Due</th><th>Status</th>';
+  }
+  
+  const tbody = $('consumerBody');
+  tbody.innerHTML = '';
+  filtered.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="consumerLink" onclick="openModal('${encodeURIComponent(JSON.stringify(c))}')">` + (c.no || '—') + `</span></td><td>${c.name || '—'}</td><td>${c.address || '—'}</td><td>${c.meter || '—'}</td><td>₹${c.due || 0}</td><td>${c.status || 'Pending'}</td>`;
+    tbody.appendChild(tr);
+  });
 }
 
-function selectCase(no){
-  selected = allCases.find(x => String(x.no) === String(no));
-  if(!selected) return;
-  $('searchCard').classList.add('hidden');
-  $('formCard').classList.remove('hidden');
-  $('cName').textContent = selected.name || 'Consumer';
-  $('cNo').textContent = selected.no;
-  $('cMeter').textContent = selected.meter || '—';
-  $('cAddr').textContent = selected.address || '';
-  $('cSub').textContent = selected.sub || '';
-  $('cDue').textContent = (+selected.due||0).toLocaleString();
-  $('cStatus').textContent = selected.status || 'Pending';
+function openModal(encoded){
+  selected = JSON.parse(decodeURIComponent(encoded));
+  $('mName').textContent = selected.name || 'Unknown';
+  $('mNo').textContent = selected.no || '—';
+  $('mMeter').textContent = selected.meter || '—';
+  $('mAddr').textContent = selected.address || '—';
+  $('mDue').textContent = selected.due || 0;
+  $('modalTimestamp').textContent = new Date().toLocaleString();
+  $('compliance').value = 'Paid';
+  $('amount').value = '';
+  $('spotForm').classList.add('hidden');
+  $('overlay').classList.remove('hidden');
+}
 
-  $('compliance').value = selected.compliance || 'Paid';
-  $('amount').value = selected.amount || '';
-  $('supply').value = selected.supply || 'Disconnection Pending';
-  $('alt').value = selected.alt || 'No';
-  $('response').value = selected.response || 'Will Pay';
-  $('action').value = selected.action || 'Close Case';
-  $('revisit').value = selected.revisit || '';
-  $('remarks').value = selected.remarks || '';
-
-  let spot = {};
-  try{ spot = selected.spot ? JSON.parse(selected.spot) : {}; }catch(e){}
-  $('smeter').value = spot.meter || selected.meter || '';
-  $('mstatus').value = spot.status || 'Reading Available';
-  $('reading').value = spot.reading || '';
-  $('assessment').value = spot.assessment || 'No';
-  $('theft').value = spot.theft || 'No';
-  $('spotRemark').value = spot.remark || '';
-
-  toggleSpot(); readingToggle();
-  window.scrollTo({top:0,behavior:'smooth'});
+function closeModal(){
+  $('overlay').classList.add('hidden');
+  selected = null;
 }
 
 function toggleSpot(){
-  $('spotForm').classList.toggle('hidden', $('compliance').value !== 'B80');
-  if($('compliance').value === 'B80'){
-    $('spotProfile').innerHTML = `<b>Your Profile (stored on this device)</b><br>Name: ${profile.name||''}<br>CPF: ${profile.cpf||''}<br>Designation: ${profile.designation||''}${!profile.name?'<br><br><u>Please complete setup first</u>':''}`;
-  }
-}
-function readingToggle(){
-  $('readingDiv').style.display = $('mstatus').value === 'Reading Available' ? 'block' : 'none';
-}
-
-function backToSearch(){
-  $('formCard').classList.add('hidden');
-  $('searchCard').classList.remove('hidden');
-  $('q').value=''; $('results').innerHTML=''; $('results').classList.add('hidden');
-}
-
-function loadProfile(){
-  const stored = localStorage.getItem('ddl_profile');
-  if(stored){
-    try{ profile = JSON.parse(stored); }catch(e){}
-  }
-  if(profile.name && profile.cpf){
-    $('profileCard').classList.add('hidden');
-    $('mainUi').classList.remove('hidden');
+  const comp = $('compliance').value;
+  if(comp === 'B80'){
+    $('amountRow').classList.add('hidden');
+    $('spotForm').classList.remove('hidden');
   }else{
-    $('profileCard').classList.remove('hidden');
-    $('mainUi').classList.add('hidden');
+    $('amountRow').classList.remove('hidden');
+    $('spotForm').classList.add('hidden');
+  }
+  $('revisitDateDiv').classList.add('hidden');
+}
+
+function toggleReading(){
+  const status = $('meterStatus').value;
+  const rdiv = $('readingDiv');
+  if(status === 'ok'){
+    rdiv.classList.remove('hidden');
+  }else{
+    rdiv.classList.add('hidden');
   }
 }
 
-function saveProfile(){
-  profile.name = $('pName').value.trim();
-  profile.cpf = $('pCpf').value.trim();
-  profile.designation = $('pDesignation').value.trim();
-  if(!profile.name || !profile.cpf) return alert('Name and CPF are required');
-  localStorage.setItem('ddl_profile', JSON.stringify(profile));
-  loadProfile();
-}
-
-async function submitCase(){
-  if($('compliance').value === 'B80' && !$('smeter').value){
-    return alert('Meter Serial Number is required for B80 bill revision cases');
-  }
-  if($('compliance').value === 'B80' && !profile.name){
-    return alert('Please complete your profile setup first');
-  }
-  const payload = {
-    action: 'update',
-    caseData: {
-      no: selected.no,
-      status: 'Attended',
-      compliance: $('compliance').value,
-      amount: +$('amount').value || 0,
-      supply: $('supply').value,
-      alt: $('alt').value,
-      response: $('response').value,
-      action: $('action').value,
-      revisit: $('revisit').value,
-      remarks: $('remarks').value,
-      time: new Date().toLocaleString(),
-      spot: $('compliance').value === 'B80' ? JSON.stringify({
-        meter: $('smeter').value,
-        status: $('mstatus').value,
-        reading: $('reading').value,
-        assessment: $('assessment').value,
-        theft: $('theft').value,
-        remark: $('spotRemark').value,
-        staffName: profile.name,
-        cpf: profile.cpf,
-        designation: profile.designation,
-        performedAt: new Date().toLocaleString(),
-        office: 'Assistant Engineer, MSEDCL, Chakan U Section'
-      }) : null
-    }
+function submitCompliance(){
+  if(!selected) return;
+  const data = {
+    no: selected.no,
+    name: selected.name,
+    staff: myProfile.name || 'Unknown',
+    compliance: $('compliance').value,
+    amount: $('amount').value || 0,
+    meter: $('meter').value || '',
+    meterStatus: $('meterStatus').value || '',
+    reading: $('reading').value || '',
+    assessment: $('assessment').value,
+    theft: $('theft').value,
+    spotRemark: $('spotRemark').value,
+    revisit: $('revisit').value,
+    revisitDate: $('revisitDate').value,
+    remarks: $('remarks').value,
+    timestamp: new Date().toISOString()
   };
-  try{
-    await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
-    showToast('Saved ✓');
-    await loadCases();
-    backToSearch();
-  }catch(err){
-    alert('Could not save — check your internet connection and try again.');
-  }
+  
+  console.log('Submitting:', data);
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }).then(r => r.json()).then(d => {
+    alert('✓ Compliance saved');
+    closeModal();
+    loadCases();
+    renderTable();
+  }).catch(e => {
+    alert('✗ Error: ' + e.message);
+  });
 }
 
-function showToast(msg){
-  const t = document.createElement('div');
-  t.className = 'toast'; t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(), 2000);
+if(myProfile.name){
+  $('myName').textContent = myProfile.name;
+  $('mainUi').classList.remove('hidden');
+  loadCases();
+  renderTable();
+}else{
+  $('profileCard').classList.remove('hidden');
 }
 
-loadProfile();
-loadCases();
+setInterval(loadCases, 20000);
 </script>
 </body></html>
